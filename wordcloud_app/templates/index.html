@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日本語ワードクラウド設定ツール</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- ヘッダー -->
+        <header class="header">
+            <h1><i class="fas fa-cloud"></i> 日本語ワードクラウド設定ツール</h1>
+            <p class="subtitle">リアルタイムでフォント・設定を調整して最適なワードクラウドを作成</p>
+        </header>
+
+        <div class="main-content">
+            <!-- 設定パネル -->
+            <div class="settings-panel">
+                <div class="panel-header">
+                    <h2><i class="fas fa-cog"></i> 設定</h2>
+                    <div class="preset-controls">
+                        <select id="presetSelect" class="preset-select">
+                            <option value="">プリセット選択...</option>
+                        </select>
+                        <button id="savePreset" class="btn btn-secondary" title="現在の設定を保存">
+                            <i class="fas fa-save"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- テキスト設定 -->
+                <div class="setting-group">
+                    <h3><i class="fas fa-font"></i> テキスト設定</h3>
+                    
+                    <div class="form-group">
+                        <label for="textSource">テキストソース:</label>
+                        <select id="textSource" class="form-control">
+                            <option value="science_education">科学教育</option>
+                            <option value="japanese_general">日本語一般</option>
+                            <option value="technology">技術・IT</option>
+                            <option value="custom">カスタム</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="customTextGroup" style="display: none;">
+                        <label for="customText">カスタムテキスト:</label>
+                        <textarea id="customText" class="form-control" rows="4" 
+                                  placeholder="ここにテキストを入力してください..."></textarea>
+                    </div>
+                </div>
+
+                <!-- フォント設定 -->
+                <div class="setting-group">
+                    <h3><i class="fas fa-text-height"></i> フォント設定</h3>
+                    
+                    <div class="form-group">
+                        <label for="fontSelect">フォント:</label>
+                        <select id="fontSelect" class="form-control">
+                            <option value="">読み込み中...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="minFontSize">最小フォントサイズ:</label>
+                            <input type="range" id="minFontSize" class="range-control" 
+                                   min="5" max="50" value="10">
+                            <span class="range-value" id="minFontSizeValue">10</span>
+                        </div>
+                        <div class="form-group half">
+                            <label for="maxFontSize">最大フォントサイズ:</label>
+                            <input type="range" id="maxFontSize" class="range-control" 
+                                   min="50" max="200" value="100">
+                            <span class="range-value" id="maxFontSizeValue">100</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="preferHorizontal">水平配置率:</label>
+                        <input type="range" id="preferHorizontal" class="range-control" 
+                               min="0" max="1" step="0.1" value="0.7">
+                        <span class="range-value" id="preferHorizontalValue">0.7</span>
+                    </div>
+                </div>
+
+                <!-- レイアウト設定 -->
+                <div class="setting-group">
+                    <h3><i class="fas fa-expand-arrows-alt"></i> レイアウト設定</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="width">幅 (px):</label>
+                            <input type="number" id="width" class="form-control" 
+                                   min="200" max="2000" value="800">
+                        </div>
+                        <div class="form-group half">
+                            <label for="height">高さ (px):</label>
+                            <input type="number" id="height" class="form-control" 
+                                   min="100" max="1500" value="400">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="maxWords">最大単語数:</label>
+                        <input type="range" id="maxWords" class="range-control" 
+                               min="10" max="300" value="100">
+                        <span class="range-value" id="maxWordsValue">100</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="relativeScaling">相対スケーリング:</label>
+                        <input type="range" id="relativeScaling" class="range-control" 
+                               min="0" max="1" step="0.1" value="0.5">
+                        <span class="range-value" id="relativeScalingValue">0.5</span>
+                    </div>
+                </div>
+
+                <!-- 色・スタイル設定 -->
+                <div class="setting-group">
+                    <h3><i class="fas fa-palette"></i> 色・スタイル設定</h3>
+                    
+                    <div class="form-group">
+                        <label for="backgroundColor">背景色:</label>
+                        <div class="color-picker-container">
+                            <input type="color" id="backgroundColorPicker" value="#ffffff">
+                            <select id="backgroundColor" class="form-control">
+                                <option value="white">白</option>
+                                <option value="black">黒</option>
+                                <option value="transparent">透明</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="colormap">カラーマップ:</label>
+                        <select id="colormap" class="form-control">
+                            <option value="">読み込み中...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="collocations"> 
+                            連語を含める
+                        </label>
+                    </div>
+                </div>
+
+                <!-- アクションボタン -->
+                <div class="action-buttons">
+                    <button id="generateBtn" class="btn btn-primary">
+                        <i class="fas fa-magic"></i> 生成
+                    </button>
+                    <button id="exportConfig" class="btn btn-secondary">
+                        <i class="fas fa-download"></i> 設定エクスポート
+                    </button>
+                    <button id="resetBtn" class="btn btn-outline">
+                        <i class="fas fa-refresh"></i> リセット
+                    </button>
+                </div>
+            </div>
+
+            <!-- プレビューエリア -->
+            <div class="preview-panel">
+                <div class="panel-header">
+                    <h2><i class="fas fa-eye"></i> プレビュー</h2>
+                    <div class="preview-controls">
+                        <button id="autoUpdate" class="btn btn-toggle active" title="自動更新">
+                            <i class="fas fa-sync"></i> 自動更新
+                        </button>
+                        <button id="downloadImage" class="btn btn-secondary" title="画像ダウンロード" style="display: none;">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="preview-container">
+                    <div id="loadingIndicator" class="loading-indicator">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>ワードクラウドを生成中...</p>
+                    </div>
+                    
+                    <div id="errorMessage" class="error-message" style="display: none;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p id="errorText">エラーが発生しました</p>
+                    </div>
+                    
+                    <div id="previewImage" class="preview-image" style="display: none;">
+                        <img id="wordcloudImg" alt="ワードクラウド">
+                    </div>
+                    
+                    <div id="welcomeMessage" class="welcome-message">
+                        <i class="fas fa-cloud fa-3x"></i>
+                        <h3>ワードクラウド設定ツールへようこそ</h3>
+                        <p>左側の設定を調整して、理想的なワードクラウドを作成しましょう</p>
+                        <button class="btn btn-primary" onclick="generateWordCloud()">
+                            <i class="fas fa-magic"></i> 最初のワードクラウドを生成
+                        </button>
+                    </div>
+                </div>
+
+                <!-- メタ情報 -->
+                <div id="metaInfo" class="meta-info" style="display: none;">
+                    <div class="meta-row">
+                        <span class="meta-label">フォント:</span>
+                        <span id="metaFont">-</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">サイズ:</span>
+                        <span id="metaSize">-</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">単語数:</span>
+                        <span id="metaWords">-</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">カラーマップ:</span>
+                        <span id="metaColormap">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast通知 -->
+    <div id="toast" class="toast">
+        <div class="toast-content">
+            <i class="toast-icon"></i>
+            <span class="toast-message"></span>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "IPAexGothic": {
+    "name": "IPAex Gothic",
+    "path": "fonts/ipaexg.ttf",
+    "description": "IPA フォント（ゴシック）"
+  },
+  "IPAexMincho": {
+    "name": "IPAex Mincho",
+    "path": "fonts/ipaexm.ttf",
+    "description": "IPA フォント（明朝）"
+  },
+  "IPAGothic": {
+    "name": "IPA Gothic",
+    "path": "fonts/ipag.ttf",
+    "description": "IPA ゴシック"
+  },
+  "IPAMincho": {
+    "name": "IPA Mincho",
+    "path": "fonts/ipam.ttf",
+    "description": "IPA 明朝"
+  }
+}
