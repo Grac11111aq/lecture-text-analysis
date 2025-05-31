@@ -1,0 +1,109 @@
+{
+  "generation_timestamp": "2025-05-31T19:42:01.777713",
+  "datasets": {
+    "comments": {
+      "record_count": 21,
+      "column_count": 4,
+      "missing_values": {
+        "class": 0,
+        "page_id": 0,
+        "lr_position": 0,
+        "comment": 0
+      },
+      "data_types": {
+        "class": "int64",
+        "page_id": "int64",
+        "lr_position": "object",
+        "comment": "object"
+      },
+      "comment_statistics": {
+        "count": 21,
+        "mean_length": 99.47619047619048,
+        "std_length": 27.27933109080765,
+        "min_length": 45,
+        "max_length": 149,
+        "empty_rate": 0.0
+      },
+      "class_distribution": {
+        "3": 21
+      }
+    },
+    "q2_before": {
+      "record_count": 84,
+      "column_count": 3,
+      "missing_values": {
+        "page_id": 0,
+        "class": 0,
+        "reason_text": 2
+      },
+      "data_types": {
+        "page_id": "int64",
+        "class": "float64",
+        "reason_text": "object"
+      },
+      "reason_text_statistics": {
+        "count": 82,
+        "mean_length": 13.304878048780488,
+        "std_length": 6.017852092906969,
+        "min_length": 5,
+        "max_length": 41,
+        "empty_rate": 0.0
+      },
+      "class_distribution": {
+        "4.0": 25,
+        "2.0": 23,
+        "3.0": 22,
+        "1.0": 14
+      }
+    },
+    "q2_after": {
+      "record_count": 95,
+      "column_count": 3,
+      "missing_values": {
+        "page_id": 0,
+        "class": 0,
+        "reason_text": 0
+      },
+      "data_types": {
+        "page_id": "int64",
+        "class": "float64",
+        "reason_text": "object"
+      },
+      "reason_text_statistics": {
+        "count": 95,
+        "mean_length": 14.0,
+        "std_length": 4.972263494156273,
+        "min_length": 8,
+        "max_length": 34,
+        "empty_rate": 0.0
+      },
+      "class_distribution": {
+        "2.0": 25,
+        "4.0": 25,
+        "1.0": 23,
+        "3.0": 22
+      }
+    }
+  },
+  "integrated_statistics": {
+    "total_records": 198,
+    "by_category": {
+      "reason_explanation": 177,
+      "comment": 21
+    },
+    "by_time_point": {
+      "after": 116,
+      "before": 82
+    },
+    "by_class": {
+      "3.0": 65,
+      "4.0": 49,
+      "2.0": 48,
+      "1.0": 36
+    },
+    "text_length_overall": {
+      "mean": 22.77777777777778,
+      "std": 28.351870118196747
+    }
+  }
+}

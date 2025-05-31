@@ -1,0 +1,170 @@
+{
+  "basic_food": {
+    "before_kruskal_wallis": {
+      "statistic": 1.8811454768484068,
+      "p_value": 0.5974379110334995
+    },
+    "after_kruskal_wallis": {
+      "statistic": 23.024215656299514,
+      "p_value": 3.991639057771076e-05
+    },
+    "class_labels": [
+      "class_1.0",
+      "class_2.0",
+      "class_3.0",
+      "class_4.0"
+    ],
+    "class_effect_sizes": {
+      "class_1.0": {
+        "effect_size": 0.07387504507533438,
+        "before_mean": 0.5714285714285714,
+        "after_mean": 0.6086956521739131,
+        "change_rate": 6.521739130434795
+      },
+      "class_2.0": {
+        "effect_size": 0.06333357767631109,
+        "before_mean": 0.6086956521739131,
+        "after_mean": 0.64,
+        "change_rate": 5.142857142857139
+      },
+      "class_3.0": {
+        "effect_size": -1.3448466232962728,
+        "before_mean": 0.6363636363636364,
+        "after_mean": 0.09090909090909091,
+        "change_rate": -85.71428571428571
+      },
+      "class_4.0": {
+        "effect_size": -1.326086223779282,
+        "before_mean": 0.76,
+        "after_mean": 0.2,
+        "change_rate": -73.6842105263158
+      }
+    }
+  },
+  "basic_salt": {
+    "before_kruskal_wallis": {
+      "statistic": 12.056299919962168,
+      "p_value": 0.007192768135993623
+    },
+    "after_kruskal_wallis": {
+      "statistic": 17.421851113755174,
+      "p_value": 0.0005786937640399622
+    },
+    "class_labels": [
+      "class_1.0",
+      "class_2.0",
+      "class_3.0",
+      "class_4.0"
+    ],
+    "class_effect_sizes": {
+      "class_1.0": {
+        "effect_size": 0.3885212102793022,
+        "before_mean": 0.2857142857142857,
+        "after_mean": 0.4782608695652174,
+        "change_rate": 67.3913043478261
+      },
+      "class_2.0": {
+        "effect_size": -0.03306232612667888,
+        "before_mean": 0.6956521739130435,
+        "after_mean": 0.68,
+        "change_rate": -2.2499999999999902
+      },
+      "class_3.0": {
+        "effect_size": -1.0023894896671728,
+        "before_mean": 0.6818181818181818,
+        "after_mean": 0.22727272727272727,
+        "change_rate": -66.66666666666666
+      },
+      "class_4.0": {
+        "effect_size": -0.373679493197531,
+        "before_mean": 0.32,
+        "after_mean": 0.16,
+        "change_rate": -50.0
+      }
+    }
+  },
+  "scientific": {
+    "before_kruskal_wallis": {
+      "statistic": NaN,
+      "p_value": NaN
+    },
+    "after_kruskal_wallis": {
+      "statistic": 57.79226733740567,
+      "p_value": 1.7408938418983504e-12
+    },
+    "class_labels": [
+      "class_1.0",
+      "class_2.0",
+      "class_3.0",
+      "class_4.0"
+    ],
+    "class_effect_sizes": {
+      "class_1.0": {
+        "effect_size": 0.26300182599044497,
+        "before_mean": 0.0,
+        "after_mean": 0.043478260869565216,
+        "change_rate": 0
+      },
+      "class_2.0": {
+        "effect_size": 0.27688746209726917,
+        "before_mean": 0.0,
+        "after_mean": 0.04,
+        "change_rate": 0
+      },
+      "class_3.0": {
+        "effect_size": 2.256304299271065,
+        "before_mean": 0.0,
+        "after_mean": 0.7272727272727273,
+        "change_rate": 0
+      },
+      "class_4.0": {
+        "effect_size": 3.752332607858744,
+        "before_mean": 0.0,
+        "after_mean": 0.88,
+        "change_rate": 0
+      }
+    }
+  },
+  "advanced": {
+    "before_kruskal_wallis": {
+      "statistic": NaN,
+      "p_value": NaN
+    },
+    "after_kruskal_wallis": {
+      "statistic": NaN,
+      "p_value": NaN
+    },
+    "class_labels": [
+      "class_1.0",
+      "class_2.0",
+      "class_3.0",
+      "class_4.0"
+    ],
+    "class_effect_sizes": {
+      "class_1.0": {
+        "effect_size": 0.0,
+        "before_mean": 0.0,
+        "after_mean": 0.0,
+        "change_rate": 0
+      },
+      "class_2.0": {
+        "effect_size": 0.0,
+        "before_mean": 0.0,
+        "after_mean": 0.0,
+        "change_rate": 0
+      },
+      "class_3.0": {
+        "effect_size": 0.0,
+        "before_mean": 0.0,
+        "after_mean": 0.0,
+        "change_rate": 0
+      },
+      "class_4.0": {
+        "effect_size": 0.0,
+        "before_mean": 0.0,
+        "after_mean": 0.0,
+        "change_rate": 0
+      }
+    }
+  }
+}

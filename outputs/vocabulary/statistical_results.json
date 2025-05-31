@@ -1,0 +1,62 @@
+{
+  "basic_food": {
+    "mann_whitney_u": 2931.5,
+    "p_value": 0.00041179577287010245,
+    "effect_size_cohens_d": -0.547362516826721,
+    "confidence_interval": [
+      -0.4083209251063563,
+      -0.12225551599640061
+    ],
+    "before_mean": 0.6547619047619048,
+    "after_mean": 0.3894736842105263,
+    "before_std": 0.4783014026576547,
+    "after_std": 0.4902178595604477,
+    "sample_size_before": 84,
+    "sample_size_after": 95
+  },
+  "basic_salt": {
+    "mann_whitney_u": 3501.5,
+    "p_value": 0.10143594688443441,
+    "effect_size_cohens_d": -0.2467441167358784,
+    "confidence_interval": [
+      -0.26931724841903926,
+      0.02445509303056817
+    ],
+    "before_mean": 0.5119047619047619,
+    "after_mean": 0.3894736842105263,
+    "before_std": 0.5028604352367053,
+    "after_std": 0.4902178595604477,
+    "sample_size_before": 84,
+    "sample_size_after": 95
+  },
+  "scientific": {
+    "mann_whitney_u": 5670.0,
+    "p_value": 1.720991784778812e-11,
+    "effect_size_cohens_d": 1.1640549486364362,
+    "confidence_interval": [
+      0.32055599648831323,
+      0.5215492666695815
+    ],
+    "before_mean": 0.0,
+    "after_mean": 0.42105263157894735,
+    "before_std": 0.0,
+    "after_std": 0.4963472396486464,
+    "sample_size_before": 84,
+    "sample_size_after": 95
+  },
+  "advanced": {
+    "mann_whitney_u": 3990.0,
+    "p_value": 1.0,
+    "effect_size_cohens_d": 0.0,
+    "confidence_interval": [
+      0.0,
+      0.0
+    ],
+    "before_mean": 0.0,
+    "after_mean": 0.0,
+    "before_std": 0.0,
+    "after_std": 0.0,
+    "sample_size_before": 84,
+    "sample_size_after": 95
+  }
+}

@@ -1,0 +1,244 @@
+# 東京高専出前授業テキストマイニング分析設定
+# 最終更新: 2025-05-31
+
+# データ設定
+data:
+  encoding: "utf-8"
+  chunk_size: 1000
+  na_values: ["", "なし", "？", "わからない"]
+  
+  # ファイルパス
+  paths:
+    comments: "data/raw/comments.csv"
+    q2_before: "data/raw/q2_reasons_before.csv"
+    q2_after: "data/raw/q2_reasons_after.csv"
+    processed_corpus: "data/processed/all_text_corpus.csv"
+
+# 語彙分析設定
+vocabulary_analysis:
+  # 分析対象語彙の階層定義
+  target_vocabularies:
+    basic_food: ["みそ", "みそ汁", "みそしる"]
+    basic_salt: ["塩", "食塩", "塩分", "えん分", "しお"]
+    scientific: ["ナトリウム", "塩化ナトリウム", "Na"]
+    advanced: ["Na+", "NaCl", "イオン", "ストロンチウム"]
+  
+  # 正規化ルール（表記ゆれ対応）
+  normalization:
+    "みそしる": "みそ汁"
+    "しお": "塩"
+    "えん分": "塩分"
+    "ナトリウム": "ナトリウム"  # 統一表記
+  
+  # 統計分析パラメータ
+  statistics:
+    significance_level: 0.05
+    effect_size_threshold: 0.2
+    confidence_interval: 0.95
+    multiple_comparison_method: "bonferroni"
+
+# クラス分析設定
+class_analysis:
+  classes: [1.0, 2.0, 3.0, 4.0]
+  min_sample_size: 3
+  
+  # クラス間比較手法
+  comparison_methods:
+    primary: "kruskal_wallis"  # ノンパラメトリック
+    post_hoc: "dunn"          # 事後検定
+    
+  # 効果量計算
+  effect_size_metrics:
+    - "cohens_d"
+    - "hedges_g"
+    - "glass_delta"
+
+# 感情分析設定
+sentiment_analysis:
+  language: "japanese"
+  
+  # 極性分析
+  polarity:
+    threshold_positive: 0.1
+    threshold_negative: -0.1
+    
+  # 興味関心語彙
+  interest_keywords:
+    positive: ["おもしろい", "面白い", "すごい", "きれい", "美しい", "楽しい", "たのしい"]
+    engagement: ["びっくり", "おどろき", "感動", "発見", "気づき"]
+    learning: ["わかった", "理解", "学習", "勉強", "知識"]
+    
+  # 実験関連語彙
+  experiment_keywords:
+    flame_reaction: ["炎色反応", "炎の色", "火の色", "色が変わる", "緑色", "赤色"]
+    recrystallization: ["再結晶", "結晶", "かたまる", "固まる", "氷みたい"]
+    general: ["実験", "観察", "スケッチ", "シャーレ"]
+
+# トピックモデリング設定
+topic_modeling:
+  # LDAパラメータ
+  lda:
+    n_topics: 5
+    alpha: "auto"
+    beta: "auto"
+    random_state: 42
+    max_iterations: 1000
+    min_prob: 0.01
+    
+  # 前処理パラメータ
+  preprocessing:
+    min_df: 2      # 最小出現文書数
+    max_df: 0.8    # 最大出現文書率
+    max_features: 1000
+    
+  # 日本語処理
+  japanese:
+    tokenizer: "janome"  # "janome" or "mecab"
+    pos_filter: ["名詞", "動詞", "形容詞"]  # 品詞フィルタ
+    stopwords: ["する", "なる", "ある", "いる", "です", "ます"]
+
+# 可視化設定
+visualization:
+  # スタイル設定
+  style: "seaborn-v0_8"
+  figure_size: [12, 8]
+  font_size: 12
+  font_family: "DejaVu Sans"
+  
+  # 色設定
+  color_palettes:
+    categorical: "Set2"
+    sequential: "viridis"
+    diverging: "RdBu_r"
+    class_colors: ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728"]
+    
+  # 出力設定
+  output:
+    format: "png"
+    dpi: 300
+    transparent: false
+    bbox_inches: "tight"
+    
+  # ワードクラウド設定
+  wordcloud:
+    width: 800
+    height: 400
+    max_words: 100
+    background_color: "white"
+    colormap: "viridis"
+    font_path: null  # システムフォント使用
+
+# 統計検定設定
+statistical_testing:
+  # 検定手法選択
+  methods:
+    two_group: "mann_whitney_u"    # 独立2群比較
+    multi_group: "kruskal_wallis"  # 多群比較
+    paired: "wilcoxon"             # 対応あり比較
+    
+  # 効果量設定
+  effect_sizes:
+    cohens_d:
+      small: 0.2
+      medium: 0.5
+      large: 0.8
+    
+  # 検定力分析
+  power_analysis:
+    desired_power: 0.8
+    alpha: 0.05
+    
+  # 多重比較補正
+  multiple_comparison:
+    method: "bonferroni"
+    family_wise_error_rate: 0.05
+
+# 出力設定
+output:
+  # ディレクトリ設定
+  directories:
+    base: "outputs"
+    vocabulary: "outputs/vocabulary"
+    sentiment: "outputs/sentiment_results"
+    topics: "outputs/topic_models"
+    statistics: "outputs/statistics"
+    visualizations: "outputs/visualizations"
+    wordclouds: "outputs/wordclouds"
+    
+  # ファイル命名規則
+  naming:
+    timestamp: true
+    prefix: "analysis"
+    
+  # データ形式
+  formats:
+    primary: "json"
+    secondary: ["csv", "pkl"]
+
+# ログ設定
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+  # ログファイル
+  files:
+    main: "logs/analysis.log"
+    error: "logs/errors.log"
+    debug: "logs/debug.log"
+    
+  # ローテーション
+  rotation:
+    max_size: "10MB"
+    backup_count: 5
+
+# 品質保証設定
+quality_assurance:
+  # データ検証
+  data_validation:
+    check_encoding: true
+    check_missing_values: true
+    check_duplicates: true
+    check_outliers: true
+    
+  # 結果検証
+  result_validation:
+    check_statistical_assumptions: true
+    check_effect_size_consistency: true
+    verify_reproducibility: true
+    
+  # エラーハンドリング
+  error_handling:
+    save_intermediate_results: true
+    continue_on_minor_errors: true
+    detailed_error_logging: true
+
+# パフォーマンス設定
+performance:
+  # メモリ管理
+  memory:
+    chunk_processing: true
+    max_memory_usage: "4GB"
+    garbage_collection: true
+    
+  # 並列処理
+  parallel:
+    n_jobs: -1  # 全CPUコア使用
+    backend: "threading"
+    
+  # キャッシュ
+  cache:
+    enable: true
+    directory: "cache"
+    max_size: "1GB"
+
+# セキュリティ・プライバシー設定
+security:
+  # データ保護
+  data_protection:
+    anonymize_output: true
+    no_personal_identifiers: true
+    
+  # アクセス制御
+  access_control:
+    read_only_data: true
+    secure_output_directory: false

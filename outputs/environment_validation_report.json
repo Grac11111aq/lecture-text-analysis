@@ -1,0 +1,199 @@
+{
+  "overall_status": false,
+  "timestamp": "1748687417.5261586",
+  "checks": {
+    "python_version": {
+      "status": true,
+      "details": "Python 3.12.3 - OK (3.8+ 要件満たす)"
+    },
+    "packages": {
+      "status": false,
+      "details": {
+        "pandas": {
+          "status": true,
+          "details": "2.2.3",
+          "required": true
+        },
+        "numpy": {
+          "status": true,
+          "details": "2.2.6",
+          "required": true
+        },
+        "scipy": {
+          "status": true,
+          "details": "1.15.3",
+          "required": true
+        },
+        "matplotlib": {
+          "status": true,
+          "details": "unknown",
+          "required": true
+        },
+        "seaborn": {
+          "status": true,
+          "details": "0.13.2",
+          "required": true
+        },
+        "sklearn": {
+          "status": true,
+          "details": "1.6.1",
+          "required": true
+        },
+        "gensim": {
+          "status": false,
+          "details": "インポートエラー: cannot import name 'triu' from 'scipy.linalg' (/home/grace/projects/social-implement/lecture-survey-analysis/lecture-text-analysis/venv/lib/python3.12/site-packages/scipy/linalg/__init__.py)",
+          "required": true
+        },
+        "janome": {
+          "status": true,
+          "details": "unknown",
+          "required": true
+        },
+        "textblob": {
+          "status": true,
+          "details": "unknown",
+          "required": true
+        },
+        "wordcloud": {
+          "status": true,
+          "details": "1.9.4",
+          "required": true
+        },
+        "yaml": {
+          "status": true,
+          "details": "6.0.2",
+          "required": true
+        },
+        "pathlib": {
+          "status": true,
+          "details": "unknown",
+          "required": true
+        },
+        "pingouin": {
+          "status": false,
+          "details": "インポートエラー: No module named 'pingouin'",
+          "required": false
+        },
+        "plotly": {
+          "status": false,
+          "details": "インポートエラー: No module named 'plotly'",
+          "required": false
+        },
+        "kaleido": {
+          "status": false,
+          "details": "インポートエラー: No module named 'kaleido'",
+          "required": false
+        },
+        "statsmodels": {
+          "status": false,
+          "details": "インポートエラー: No module named 'statsmodels'",
+          "required": false
+        },
+        "fugashi": {
+          "status": false,
+          "details": "インポートエラー: No module named 'fugashi'",
+          "required": false
+        },
+        "unidic_lite": {
+          "status": false,
+          "details": "インポートエラー: No module named 'unidic_lite'",
+          "required": false
+        }
+      },
+      "failed": [
+        "gensim"
+      ]
+    },
+    "japanese_nlp": {
+      "status": true,
+      "details": {
+        "janome": true,
+        "mecab": false,
+        "spacy_ginza": false,
+        "primary_tokenizer": "janome"
+      }
+    },
+    "data_files": {
+      "status": true,
+      "details": {
+        "data/raw/comments.csv": {
+          "exists": true,
+          "size_bytes": 6492,
+          "records": 21,
+          "columns": [
+            "class",
+            "page-ID",
+            "LR",
+            "comment"
+          ]
+        },
+        "data/raw/q2_reasons_before.csv": {
+          "exists": true,
+          "size_bytes": 3957,
+          "records": 84,
+          "columns": [
+            "Page_ID",
+            "class",
+            "Q2_MisoSalty_Reason"
+          ]
+        },
+        "data/raw/q2_reasons_after.csv": {
+          "exists": true,
+          "size_bytes": 4737,
+          "records": 95,
+          "columns": [
+            "Page_ID",
+            "class",
+            "Q2_MisoSaltyReason"
+          ]
+        }
+      },
+      "missing": []
+    },
+    "directories": {
+      "status": true,
+      "details": {
+        "outputs/wordclouds": {
+          "exists": true,
+          "created": false
+        },
+        "outputs/sentiment_results": {
+          "exists": true,
+          "created": false
+        },
+        "outputs/topic_models": {
+          "exists": true,
+          "created": false
+        },
+        "outputs/vocabulary": {
+          "exists": true,
+          "created": false
+        },
+        "outputs/statistics": {
+          "exists": true,
+          "created": false
+        },
+        "logs": {
+          "exists": true,
+          "created": false
+        },
+        "config": {
+          "exists": true,
+          "created": false
+        }
+      }
+    },
+    "basic_functionality": {
+      "status": true,
+      "details": {
+        "data_loading": true,
+        "visualization": true,
+        "statistics": true,
+        "text_processing": true
+      }
+    }
+  },
+  "recommendations": [
+    "必須パッケージをインストールしてください: gensim"
+  ]
+}

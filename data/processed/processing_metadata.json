@@ -1,0 +1,414 @@
+{
+  "export_timestamp": "2025-05-31T19:42:01.803033",
+  "datasets": {
+    "comments": 21,
+    "q2_before": 84,
+    "q2_after": 95,
+    "integrated": 198
+  },
+  "processing_config": {
+    "data": {
+      "encoding": "utf-8",
+      "chunk_size": 1000,
+      "na_values": [
+        "",
+        "なし",
+        "？",
+        "わからない"
+      ],
+      "paths": {
+        "comments": "data/raw/comments.csv",
+        "q2_before": "data/raw/q2_reasons_before.csv",
+        "q2_after": "data/raw/q2_reasons_after.csv",
+        "processed_corpus": "data/processed/all_text_corpus.csv"
+      }
+    },
+    "vocabulary_analysis": {
+      "target_vocabularies": {
+        "basic_food": [
+          "みそ",
+          "みそ汁",
+          "みそしる"
+        ],
+        "basic_salt": [
+          "塩",
+          "食塩",
+          "塩分",
+          "えん分",
+          "しお"
+        ],
+        "scientific": [
+          "ナトリウム",
+          "塩化ナトリウム",
+          "Na"
+        ],
+        "advanced": [
+          "Na+",
+          "NaCl",
+          "イオン",
+          "ストロンチウム"
+        ]
+      },
+      "normalization": {
+        "みそしる": "みそ汁",
+        "しお": "塩",
+        "えん分": "塩分",
+        "ナトリウム": "ナトリウム"
+      },
+      "statistics": {
+        "significance_level": 0.05,
+        "effect_size_threshold": 0.2,
+        "confidence_interval": 0.95,
+        "multiple_comparison_method": "bonferroni"
+      }
+    },
+    "class_analysis": {
+      "classes": [
+        1.0,
+        2.0,
+        3.0,
+        4.0
+      ],
+      "min_sample_size": 3,
+      "comparison_methods": {
+        "primary": "kruskal_wallis",
+        "post_hoc": "dunn"
+      },
+      "effect_size_metrics": [
+        "cohens_d",
+        "hedges_g",
+        "glass_delta"
+      ]
+    },
+    "sentiment_analysis": {
+      "language": "japanese",
+      "polarity": {
+        "threshold_positive": 0.1,
+        "threshold_negative": -0.1
+      },
+      "interest_keywords": {
+        "positive": [
+          "おもしろい",
+          "面白い",
+          "すごい",
+          "きれい",
+          "美しい",
+          "楽しい",
+          "たのしい"
+        ],
+        "engagement": [
+          "びっくり",
+          "おどろき",
+          "感動",
+          "発見",
+          "気づき"
+        ],
+        "learning": [
+          "わかった",
+          "理解",
+          "学習",
+          "勉強",
+          "知識"
+        ]
+      },
+      "experiment_keywords": {
+        "flame_reaction": [
+          "炎色反応",
+          "炎の色",
+          "火の色",
+          "色が変わる",
+          "緑色",
+          "赤色"
+        ],
+        "recrystallization": [
+          "再結晶",
+          "結晶",
+          "かたまる",
+          "固まる",
+          "氷みたい"
+        ],
+        "general": [
+          "実験",
+          "観察",
+          "スケッチ",
+          "シャーレ"
+        ]
+      }
+    },
+    "topic_modeling": {
+      "lda": {
+        "n_topics": 5,
+        "alpha": "auto",
+        "beta": "auto",
+        "random_state": 42,
+        "max_iterations": 1000,
+        "min_prob": 0.01
+      },
+      "preprocessing": {
+        "min_df": 2,
+        "max_df": 0.8,
+        "max_features": 1000
+      },
+      "japanese": {
+        "tokenizer": "janome",
+        "pos_filter": [
+          "名詞",
+          "動詞",
+          "形容詞"
+        ],
+        "stopwords": [
+          "する",
+          "なる",
+          "ある",
+          "いる",
+          "です",
+          "ます"
+        ]
+      }
+    },
+    "visualization": {
+      "style": "seaborn-v0_8",
+      "figure_size": [
+        12,
+        8
+      ],
+      "font_size": 12,
+      "font_family": "DejaVu Sans",
+      "color_palettes": {
+        "categorical": "Set2",
+        "sequential": "viridis",
+        "diverging": "RdBu_r",
+        "class_colors": [
+          "#1f77b4",
+          "#ff7f0e",
+          "#2ca02c",
+          "#d62728"
+        ]
+      },
+      "output": {
+        "format": "png",
+        "dpi": 300,
+        "transparent": false,
+        "bbox_inches": "tight"
+      },
+      "wordcloud": {
+        "width": 800,
+        "height": 400,
+        "max_words": 100,
+        "background_color": "white",
+        "colormap": "viridis",
+        "font_path": null
+      }
+    },
+    "statistical_testing": {
+      "methods": {
+        "two_group": "mann_whitney_u",
+        "multi_group": "kruskal_wallis",
+        "paired": "wilcoxon"
+      },
+      "effect_sizes": {
+        "cohens_d": {
+          "small": 0.2,
+          "medium": 0.5,
+          "large": 0.8
+        }
+      },
+      "power_analysis": {
+        "desired_power": 0.8,
+        "alpha": 0.05
+      },
+      "multiple_comparison": {
+        "method": "bonferroni",
+        "family_wise_error_rate": 0.05
+      }
+    },
+    "output": {
+      "directories": {
+        "base": "outputs",
+        "vocabulary": "outputs/vocabulary",
+        "sentiment": "outputs/sentiment_results",
+        "topics": "outputs/topic_models",
+        "statistics": "outputs/statistics",
+        "visualizations": "outputs/visualizations",
+        "wordclouds": "outputs/wordclouds"
+      },
+      "naming": {
+        "timestamp": true,
+        "prefix": "analysis"
+      },
+      "formats": {
+        "primary": "json",
+        "secondary": [
+          "csv",
+          "pkl"
+        ]
+      }
+    },
+    "logging": {
+      "level": "INFO",
+      "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+      "files": {
+        "main": "logs/analysis.log",
+        "error": "logs/errors.log",
+        "debug": "logs/debug.log"
+      },
+      "rotation": {
+        "max_size": "10MB",
+        "backup_count": 5
+      }
+    },
+    "quality_assurance": {
+      "data_validation": {
+        "check_encoding": true,
+        "check_missing_values": true,
+        "check_duplicates": true,
+        "check_outliers": true
+      },
+      "result_validation": {
+        "check_statistical_assumptions": true,
+        "check_effect_size_consistency": true,
+        "verify_reproducibility": true
+      },
+      "error_handling": {
+        "save_intermediate_results": true,
+        "continue_on_minor_errors": true,
+        "detailed_error_logging": true
+      }
+    },
+    "performance": {
+      "memory": {
+        "chunk_processing": true,
+        "max_memory_usage": "4GB",
+        "garbage_collection": true
+      },
+      "parallel": {
+        "n_jobs": -1,
+        "backend": "threading"
+      },
+      "cache": {
+        "enable": true,
+        "directory": "cache",
+        "max_size": "1GB"
+      }
+    },
+    "security": {
+      "data_protection": {
+        "anonymize_output": true,
+        "no_personal_identifiers": true
+      },
+      "access_control": {
+        "read_only_data": true,
+        "secure_output_directory": false
+      }
+    }
+  },
+  "quality_report": {
+    "generation_timestamp": "2025-05-31T19:42:01.777713",
+    "datasets": {
+      "comments": {
+        "record_count": 21,
+        "column_count": 4,
+        "missing_values": {
+          "class": 0,
+          "page_id": 0,
+          "lr_position": 0,
+          "comment": 0
+        },
+        "data_types": {
+          "class": "int64",
+          "page_id": "int64",
+          "lr_position": "object",
+          "comment": "object"
+        },
+        "comment_statistics": {
+          "count": 21,
+          "mean_length": 99.47619047619048,
+          "std_length": 27.27933109080765,
+          "min_length": 45,
+          "max_length": 149,
+          "empty_rate": 0.0
+        },
+        "class_distribution": {
+          "3": 21
+        }
+      },
+      "q2_before": {
+        "record_count": 84,
+        "column_count": 3,
+        "missing_values": {
+          "page_id": 0,
+          "class": 0,
+          "reason_text": 2
+        },
+        "data_types": {
+          "page_id": "int64",
+          "class": "float64",
+          "reason_text": "object"
+        },
+        "reason_text_statistics": {
+          "count": 82,
+          "mean_length": 13.304878048780488,
+          "std_length": 6.017852092906969,
+          "min_length": 5,
+          "max_length": 41,
+          "empty_rate": 0.0
+        },
+        "class_distribution": {
+          "4.0": 25,
+          "2.0": 23,
+          "3.0": 22,
+          "1.0": 14
+        }
+      },
+      "q2_after": {
+        "record_count": 95,
+        "column_count": 3,
+        "missing_values": {
+          "page_id": 0,
+          "class": 0,
+          "reason_text": 0
+        },
+        "data_types": {
+          "page_id": "int64",
+          "class": "float64",
+          "reason_text": "object"
+        },
+        "reason_text_statistics": {
+          "count": 95,
+          "mean_length": 14.0,
+          "std_length": 4.972263494156273,
+          "min_length": 8,
+          "max_length": 34,
+          "empty_rate": 0.0
+        },
+        "class_distribution": {
+          "2.0": 25,
+          "4.0": 25,
+          "1.0": 23,
+          "3.0": 22
+        }
+      }
+    },
+    "integrated_statistics": {
+      "total_records": 198,
+      "by_category": {
+        "reason_explanation": 177,
+        "comment": 21
+      },
+      "by_time_point": {
+        "after": 116,
+        "before": 82
+      },
+      "by_class": {
+        "3.0": 65,
+        "4.0": 49,
+        "2.0": 48,
+        "1.0": 36
+      },
+      "text_length_overall": {
+        "mean": 22.77777777777778,
+        "std": 28.351870118196747
+      }
+    }
+  }
+}

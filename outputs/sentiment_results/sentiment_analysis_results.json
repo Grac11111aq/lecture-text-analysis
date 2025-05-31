@@ -1,0 +1,139 @@
+{
+  "sentiment": {
+    "interest_analysis": {
+      "positive": {
+        "usage_rate": 0.38095238095238093,
+        "total_mentions": 8,
+        "avg_per_text": 0.38095238095238093,
+        "max_mentions": 1,
+        "distribution": [
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          1,
+          1,
+          1,
+          1,
+          1,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      "engagement": {
+        "usage_rate": 0.14285714285714285,
+        "total_mentions": 3,
+        "avg_per_text": 0.14285714285714285,
+        "max_mentions": 1,
+        "distribution": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          0,
+          0
+        ]
+      },
+      "learning": {
+        "usage_rate": 0.047619047619047616,
+        "total_mentions": 1,
+        "avg_per_text": 0.047619047619047616,
+        "max_mentions": 1,
+        "distribution": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    "experiment_analysis": {
+      "flame_reaction": {
+        "usage_rate": 0.5714285714285714,
+        "total_mentions": 36,
+        "avg_per_text": 1.7142857142857142
+      },
+      "recrystallization": {
+        "usage_rate": 0.38095238095238093,
+        "total_mentions": 18,
+        "avg_per_text": 0.8571428571428571
+      },
+      "general": {
+        "usage_rate": 0.6666666666666666,
+        "total_mentions": 16,
+        "avg_per_text": 0.7619047619047619
+      }
+    },
+    "overall_sentiment": {
+      "mean_sentiment": 0.38095238095238093,
+      "positive_ratio": 0.38095238095238093,
+      "neutral_ratio": 0.6190476190476191,
+      "negative_ratio": 0.0,
+      "sentiment_distribution": [
+        0,
+        0,
+        0,
+        1,
+        1,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  }
+}
