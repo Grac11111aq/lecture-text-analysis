@@ -1,0 +1,29 @@
+{
+  "project_name": "lecture-text-analysis",
+  "description": "小学校出前授業アンケートのテキストマイニングプロジェクト",
+  "created_date": "2025-05-31T18:54:40.561649",
+  "source_project": "lecture-survey-analysis",
+  "data_sources": {
+    "comments": "児童の感想文",
+    "q2_reasons": "みそ汁がしょっぱい理由の記述",
+    "experiment_feedback": "実験への感想",
+    "understanding_comments": "理解に関するコメント"
+  },
+  "extraction_log": [
+    "Created directory: data/raw",
+    "Created directory: data/processed",
+    "Created directory: data/context",
+    "Created directory: docs",
+    "Created directory: notebooks",
+    "Created directory: scripts",
+    "Created directory: outputs/wordclouds",
+    "Created directory: outputs/sentiment_results",
+    "Created directory: outputs/topic_models",
+    "Extracted comments: 21 records",
+    "Extracted Q2 reasons (before): 84 records",
+    "Extracted Q2 reasons (after): 95 records",
+    "Copied: data/analysis/DATA_CONTEXT.md -> data/context/DATA_CONTEXT.md",
+    "Copied: docs/project_management/project_objectives_and_requirements.md -> docs/project_objectives.md",
+    "Copied: docs/analysis_guides/analysis_strategy_and_evaluation_criteria.md -> docs/evaluation_criteria.md"
+  ]
+}

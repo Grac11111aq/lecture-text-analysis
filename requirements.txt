@@ -1,0 +1,35 @@
+# テキストマイニング用依存関係
+
+# 基本データ処理
+pandas>=2.0.0
+numpy>=1.24.0
+
+# 自然言語処理
+janome>=0.5.0          # 日本語形態素解析
+spacy>=3.5.0           # NLP pipeline
+ginza>=5.1.0           # 日本語spaCyモデル
+
+# 可視化
+matplotlib>=3.7.0
+seaborn>=0.12.0
+wordcloud>=1.9.0       # ワードクラウド生成
+
+# 機械学習・トピックモデリング
+scikit-learn>=1.3.0
+gensim>=4.3.0          # LDA, Word2Vec
+scipy>=1.11.0
+
+# 感情分析
+textblob>=0.17.0
+
+# Jupyter環境
+jupyter>=1.0.0
+ipykernel>=6.25.0
+
+# ユーティリティ
+tqdm>=4.65.0          # プログレスバー
+requests>=2.31.0
+
+# 日本語処理強化（オプション）
+# fugashi>=1.3.0       # MeCab wrapper
+# unidic-lite>=1.0.8   # UniDic辞書

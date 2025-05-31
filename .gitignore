@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# 機械学習モデル
+*.pkl
+*.joblib
+*.model
+
+# 大容量出力ファイル
+*.png
+*.jpg
+*.svg
+!examples/*.png
+
+# 処理済みデータ（大容量の場合）
+data/processed/large_files/
+
+# MeCab辞書ファイル
+*.dic
+
+# 一時ファイル
+tmp/
+temp/
+.cache/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ログファイル
+*.log
