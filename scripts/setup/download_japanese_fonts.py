@@ -49,6 +49,27 @@ class JapaneseFontDownloader:
                 "url": "https://moji.or.jp/wp-content/ipafont/IPAfont/IPAfont00303.zip",
                 "filename": "ipam.ttf",
                 "description": "IPA 明朝"
+            },
+            "HannariMincho": {
+                "name": "はんなり明朝",
+                "url": "https://typingart.net/fontdata/hannari.zip",
+                "filename": "HannariMincho-Regular.otf",
+                "description": "はんなり明朝 - 優美で読みやすい明朝体",
+                "direct": False
+            },
+            "NotoSansJP": {
+                "name": "Noto Sans JP",
+                "url": "https://github.com/googlefonts/noto-cjk/raw/main/Sans/OTF/Japanese/NotoSansCJKjp-Regular.otf",
+                "filename": "NotoSansJP-Regular.otf",
+                "description": "Noto Sans JP - Googleの高品質日本語フォント",
+                "direct": True
+            },
+            "NotoSerifJP": {
+                "name": "Noto Serif JP",
+                "url": "https://github.com/googlefonts/noto-cjk/raw/main/Serif/OTF/Japanese/NotoSerifCJKjp-Regular.otf",
+                "filename": "NotoSerifJP-Regular.otf", 
+                "description": "Noto Serif JP - Google提供の明朝体",
+                "direct": True
             }
         }
     
@@ -137,8 +158,8 @@ class JapaneseFontDownloader:
             if not self.download_file(url, temp_file):
                 return None
             
-            # ZIP展開
-            if temp_file.suffix.lower() == '.zip':
+            # ZIP展開（directフラグがない場合のみ）
+            if temp_file.suffix.lower() == '.zip' and not font_info.get('direct', False):
                 extract_dir = temp_dir / f"extract_{font_key}"
                 extract_dir.mkdir(exist_ok=True)
                 
@@ -155,7 +176,7 @@ class JapaneseFontDownloader:
                     self.logger.error(f"フォントファイル未発見: {target_filename}")
                     return None
             else:
-                # 直接コピー
+                # 直接コピー（.ttfまたは.otfファイル）
                 shutil.copy2(temp_file, final_path)
                 self.logger.info(f"フォントインストール完了: {font_name}")
             

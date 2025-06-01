@@ -18,5 +18,20 @@
     "name": "IPA Mincho",
     "path": "fonts/ipam.ttf",
     "description": "IPA 明朝"
+  },
+  "HannariMincho": {
+    "name": "はんなり明朝",
+    "path": "fonts/HannariMincho-Regular.otf",
+    "description": "はんなり明朝 - 優美で読みやすい明朝体"
+  },
+  "NotoSansJP": {
+    "name": "Noto Sans JP",
+    "path": "fonts/NotoSansJP-Regular.otf",
+    "description": "Noto Sans JP - Googleの高品質日本語フォント"
+  },
+  "NotoSerifJP": {
+    "name": "Noto Serif JP",
+    "path": "fonts/NotoSerifJP-Regular.otf",
+    "description": "Noto Serif JP - Google提供の明朝体"
   }
 }
