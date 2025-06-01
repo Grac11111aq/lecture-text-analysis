@@ -191,15 +191,46 @@ python scripts/analysis/06_statistical_testing.py
   - Class 3.0 showed highest educational impact
 - **Final Report**: Generated comprehensive analysis report at `outputs/final_analysis_report.md`
 
-### Japanese Wordcloud Web Application
+### Japanese Wordcloud Web Application (Updated: 2025-06-01)
 - **Purpose**: Interactive tool for real-time wordcloud configuration with Japanese font support
 - **Location**: `wordcloud_app/` directory
-- **Features**:
-  - Real-time parameter adjustment with live preview
-  - 7 Japanese fonts including はんなり明朝
-  - Export/import configuration settings
-  - Responsive design with professional UI
-- **Access**: Run `python wordcloud_app/app.py` and access http://localhost:5000
+- **Updated Branding**: Tokyo Kosen (東京高専) specialized for outreach program analysis
+- **Production Data Integration**: Uses actual project data (comments, before/after responses)
+
+#### 🔧 **IMPORTANT: Server Startup Instructions**
+```bash
+# Always use virtual environment and background process for stable server
+cd /home/grace/projects/social-implement/lecture-survey-analysis/lecture-text-analysis
+source venv/bin/activate
+nohup python wordcloud_app/app.py > logs/wordcloud_app.log 2>&1 &
+
+# Access URL: http://localhost:5001 (Port changed from 5000 to 5001)
+```
+
+#### ⚠️ **Server Management Notes**
+- **Port**: Changed to 5001 to avoid conflicts
+- **Process Check**: `ps aux | grep "python.*app.py" | grep -v grep`
+- **Kill Process**: `pkill -f "python.*app.py"` if restart needed
+- **Logs**: Check `logs/wordcloud_app.log` for debug info
+- **Access Test**: `curl -s http://localhost:5001 | head -5`
+
+#### 🎨 **Enhanced Features (2025-06-01)**
+- **Custom Color Palettes**: 5 Orange+Blue themed colormaps
+  - `orange_blue`: Orange to blue gradient
+  - `blue_orange`: Blue to orange gradient  
+  - `orange_white_blue`: Balanced orange-white-blue
+  - `tokyo_kosen_warm`: Warm orange tones
+  - `tokyo_kosen_cool`: Cool blue tones
+- **Improved Japanese NLP**: Janome tokenizer with proper word segmentation
+- **Gray Backgrounds**: Default lightgray background for better contrast
+- **Production Presets**: Tokyo Kosen-specific configuration presets
+- **Real Data Sources**: 4 data source options (all responses, comments only, before/after)
+
+#### 📊 **Data Source Options**
+1. **All Responses (統合)**: Complete dataset analysis
+2. **Comments Only (感想文のみ)**: Student reflection focus
+3. **Q2 Before (授業前)**: Pre-lesson understanding
+4. **Q2 After (授業後)**: Post-lesson understanding
 
 ### Japanese Font Infrastructure
 - **Font Downloader**: `scripts/setup/download_japanese_fonts.py` - Automated font installation
@@ -220,3 +251,5 @@ python scripts/analysis/06_statistical_testing.py
 - **Error Handling**: Robust handling for statistical tests with zero-variance data
 - **Font Path Resolution**: Automatic project-relative path handling
 - **Sample vs Actual Data**: Clear separation for demo and production usage
+- **Japanese Morphological Analysis**: Enhanced word segmentation with Janome
+- **Custom Colormap System**: Dynamic colormap generation for brand consistency

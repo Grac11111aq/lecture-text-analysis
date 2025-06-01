@@ -183,17 +183,17 @@ class WordCloudApp {
     loadDefaultConfig() {
         // デフォルト設定をUIに反映
         const defaults = {
-            text_source: 'science_education',
+            text_source: 'all_responses',
             font: Object.keys(this.fonts)[0] || 'default',
-            width: 800,
-            height: 400,
-            max_words: 100,
-            background_color: 'white',
-            colormap: 'viridis',
-            min_font_size: 10,
-            max_font_size: 100,
-            relative_scaling: 0.5,
-            prefer_horizontal: 0.7,
+            width: 1000,
+            height: 600,
+            max_words: 60,
+            background_color: 'lightgray',
+            colormap: 'orange_blue',
+            min_font_size: 16,
+            max_font_size: 90,
+            relative_scaling: 0.6,
+            prefer_horizontal: 0.8,
             collocations: false
         };
         
@@ -222,7 +222,7 @@ class WordCloudApp {
         });
         
         // テキストソースに応じてカスタムテキストエリアの表示切り替え
-        this.handleTextSourceChange(config.text_source || 'science_education');
+        this.handleTextSourceChange(config.text_source || 'all_responses');
     }
     
     toCamelCase(str) {
@@ -456,6 +456,10 @@ class WordCloudApp {
         // 既存のクラスをクリア
         toast.className = 'toast';
         toast.classList.add(type);
+        
+        // アクセシビリティ向上のためaria-live属性を追加
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'polite');
         
         // 表示
         toast.classList.add('show');

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>日本語ワードクラウド設定ツール</title>
+    <title>東京高専 出前授業分析 - ワードクラウド生成ツール</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 </head>
@@ -11,8 +11,8 @@
     <div class="container">
         <!-- ヘッダー -->
         <header class="header">
-            <h1><i class="fas fa-cloud"></i> 日本語ワードクラウド設定ツール</h1>
-            <p class="subtitle">リアルタイムでフォント・設定を調整して最適なワードクラウドを作成</p>
+            <h1><i class="fas fa-flask"></i> 東京高専 出前授業分析</h1>
+            <p class="subtitle">小学生の科学学習効果を可視化するワードクラウド生成ツール</p>
         </header>
 
         <div class="main-content">
@@ -35,11 +35,12 @@
                     <h3><i class="fas fa-font"></i> テキスト設定</h3>
                     
                     <div class="form-group">
-                        <label for="textSource">テキストソース:</label>
-                        <select id="textSource" class="form-control">
-                            <option value="science_education">科学教育</option>
-                            <option value="japanese_general">日本語一般</option>
-                            <option value="technology">技術・IT</option>
+                        <label for="textSource">データソース:</label>
+                        <select id="textSource" class="form-control" aria-label="分析対象のデータを選択">
+                            <option value="all_responses">全回答（統合）</option>
+                            <option value="comments">感想文のみ</option>
+                            <option value="q2_before">授業前（なぜしょっぱい？）</option>
+                            <option value="q2_after">授業後（なぜしょっぱい？）</option>
                             <option value="custom">カスタム</option>
                         </select>
                     </div>
@@ -56,8 +57,8 @@
                     <h3><i class="fas fa-text-height"></i> フォント設定</h3>
                     
                     <div class="form-group">
-                        <label for="fontSelect">フォント:</label>
-                        <select id="fontSelect" class="form-control">
+                        <label for="fontSelect">日本語フォント:</label>
+                        <select id="fontSelect" class="form-control" aria-label="日本語フォントの選択">
                             <option value="">読み込み中...</option>
                         </select>
                     </div>
@@ -124,11 +125,13 @@
                     <div class="form-group">
                         <label for="backgroundColor">背景色:</label>
                         <div class="color-picker-container">
-                            <input type="color" id="backgroundColorPicker" value="#ffffff">
+                            <input type="color" id="backgroundColorPicker" value="#d3d3d3">
                             <select id="backgroundColor" class="form-control">
+                                <option value="lightgray">グレー</option>
                                 <option value="white">白</option>
                                 <option value="black">黒</option>
-                                <option value="transparent">透明</option>
+                                <option value="darkgray">ダークグレー</option>
+                                <option value="#f0f0f0">ライトグレー</option>
                             </select>
                         </div>
                     </div>
@@ -142,7 +145,7 @@
 
                     <div class="form-group">
                         <label>
-                            <input type="checkbox" id="collocations"> 
+                            <input type="checkbox" id="collocations" aria-label="連語を含めるかどうか"> 
                             連語を含める
                         </label>
                     </div>
@@ -192,11 +195,11 @@
                     </div>
                     
                     <div id="welcomeMessage" class="welcome-message">
-                        <i class="fas fa-cloud fa-3x"></i>
-                        <h3>ワードクラウド設定ツールへようこそ</h3>
-                        <p>左側の設定を調整して、理想的なワードクラウドを作成しましょう</p>
-                        <button class="btn btn-primary" onclick="generateWordCloud()">
-                            <i class="fas fa-magic"></i> 最初のワードクラウドを生成
+                        <i class="fas fa-flask fa-3x"></i>
+                        <h3>東京高専 出前授業データ分析</h3>
+                        <p>小学生の科学学習効果を視覚的に分析します</p>
+                        <button class="btn btn-primary" onclick="generateWordCloud()" aria-label="ワードクラウドを生成">
+                            <i class="fas fa-magic"></i> 分析を開始
                         </button>
                     </div>
                 </div>
