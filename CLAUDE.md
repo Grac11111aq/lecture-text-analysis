@@ -197,33 +197,77 @@ python scripts/analysis/06_statistical_testing.py
 - **Updated Branding**: Tokyo Kosen (東京高専) specialized for outreach program analysis
 - **Production Data Integration**: Uses actual project data (comments, before/after responses)
 
-#### 🔧 **IMPORTANT: Server Startup Instructions**
+#### 🌐 **Dual Version Architecture (Ver.1 & Ver.2)**
+
+**Ver.1 - Customizable Version (localhost:5001)**
 ```bash
-# Always use virtual environment and background process for stable server
+# Standard version with full customization options
 cd /home/grace/projects/social-implement/lecture-survey-analysis/lecture-text-analysis
 source venv/bin/activate
 nohup python wordcloud_app/app.py > logs/wordcloud_app.log 2>&1 &
-
-# Access URL: http://localhost:5001 (Port changed from 5000 to 5001)
 ```
 
-#### ⚠️ **Server Management Notes**
-- **Port**: Changed to 5001 to avoid conflicts
-- **Process Check**: `ps aux | grep "python.*app.py" | grep -v grep`
-- **Kill Process**: `pkill -f "python.*app.py"` if restart needed
-- **Logs**: Check `logs/wordcloud_app.log` for debug info
-- **Access Test**: `curl -s http://localhost:5001 | head -5`
+**Ver.2 - Word Exclusion Test Version (localhost:5002)**
+```bash
+# Fixed parameter version for consistent word exclusion testing
+cd /home/grace/projects/social-implement/lecture-survey-analysis/lecture-text-analysis
+source venv/bin/activate
+nohup python wordcloud_app/app_v2.py > logs/wordcloud_app_v2.log 2>&1 &
+```
 
-#### 🎨 **Enhanced Features (2025-06-01)**
-- **Custom Color Palettes**: 5 Orange+Blue themed colormaps
+#### ⚠️ **Server Management**
+| Version | Port | Process Pattern | Log File |
+|---------|------|----------------|----------|
+| **Ver.1** | 5001 | `python.*app.py` | `logs/wordcloud_app.log` |
+| **Ver.2** | 5002 | `python.*app_v2.py` | `logs/wordcloud_app_v2.log` |
+
+**Process Management**:
+```bash
+# Check all wordcloud processes
+ps aux | grep "app.py\|app_v2.py" | grep -v grep
+
+# Kill specific version
+pkill -f "python.*app.py"     # Ver.1
+pkill -f "python.*app_v2.py"  # Ver.2
+
+# Health check
+curl -s http://localhost:5001 >/dev/null && echo "Ver.1 OK" || echo "Ver.1 Down"
+curl -s http://localhost:5002 >/dev/null && echo "Ver.2 OK" || echo "Ver.2 Down"
+```
+
+#### 🎨 **Ver.1 Features (localhost:5001) - Customizable Version**
+- **Custom Color Palettes**: 5 Orange+Blue themed colormaps + 3-color custom system
   - `orange_blue`: Orange to blue gradient
   - `blue_orange`: Blue to orange gradient  
   - `orange_white_blue`: Balanced orange-white-blue
   - `tokyo_kosen_warm`: Warm orange tones
   - `tokyo_kosen_cool`: Cool blue tones
-- **Improved Japanese NLP**: Janome tokenizer with proper word segmentation
-- **Gray Backgrounds**: Default lightgray background for better contrast
+  - **3-Color Custom**: User-defined orange/gray/blue combinations with ListedColormap
+- **Background Control**: Brightness slider (90-100% light range) with live preview
+- **Flexible Parameters**: All visual parameters user-adjustable
 - **Production Presets**: Tokyo Kosen-specific configuration presets
+
+#### 🔍 **Ver.2 Features (localhost:5002) - Word Exclusion Test Version**
+- **Fixed Visual Parameters**: Consistent results for comparison testing
+  - Min/Max Font: 24px - 174px
+  - Horizontal Preference: 90%
+  - Relative Scaling: 0.4
+  - Max Words: 140
+  - Background: #f8f8f8
+- **WCAG 2.1 Level AA Colors**: Accessibility-compliant color scheme
+  - Orange: #d06500, Blue: #0066cc, Brown: #331a00
+- **Advanced Word Exclusion**:
+  - **Category-based**: General/Thanks/School/Experiment word groups
+  - **Custom exclusion**: Comma-separated user-defined words
+  - **Real-time filtering**: Immediate tokenization with exclusions applied
+- **Accessibility Features**:
+  - Screen reader support with live announcements
+  - Keyboard navigation optimization
+  - High contrast support
+  - Skip links and ARIA labels
+
+#### 📊 **Common Features (Both Versions)**
+- **Improved Japanese NLP**: Janome tokenizer with proper word segmentation
 - **Real Data Sources**: 4 data source options (all responses, comments only, before/after)
 
 #### 📊 **Data Source Options**
@@ -253,3 +297,49 @@ nohup python wordcloud_app/app.py > logs/wordcloud_app.log 2>&1 &
 - **Sample vs Actual Data**: Clear separation for demo and production usage
 - **Japanese Morphological Analysis**: Enhanced word segmentation with Janome
 - **Custom Colormap System**: Dynamic colormap generation for brand consistency
+
+## Version Management & Deployment Strategy (2025-06-01)
+
+### Dual Application Architecture
+The project now maintains two parallel web applications for different use cases:
+
+| Aspect | Ver.1 (Port 5001) | Ver.2 (Port 5002) |
+|--------|-------------------|-------------------|
+| **Purpose** | Full customization & exploration | Consistent testing & accessibility |
+| **Target Users** | Researchers, designers | Educators, accessibility users |
+| **Visual Parameters** | User-adjustable | Fixed for consistency |
+| **Color System** | Custom 3-color + presets | WCAG 2.1 AA compliant |
+| **Key Feature** | Real-time customization | Advanced word exclusion |
+| **Accessibility** | Standard | Enhanced (WCAG 2.1 Level AA) |
+
+### Development Context Updates
+
+#### New File Structure
+```
+wordcloud_app/
+├── app.py              # Ver.1 - Customizable version
+├── app_v2.py           # Ver.2 - Word exclusion test version
+├── templates/
+│   ├── index.html      # Ver.1 template
+│   └── index_v2.html   # Ver.2 template (accessibility-focused)
+├── static/
+│   ├── css/
+│   │   ├── style.css   # Ver.1 styles
+│   │   └── style_v2.css # Ver.2 styles (WCAG compliant)
+│   └── js/
+│       ├── app.js      # Ver.1 JavaScript
+│       └── app_v2.js   # Ver.2 JavaScript (accessibility enhanced)
+└── logs/               # Separate log files for each version
+```
+
+#### Research Applications
+1. **Visual Parameter Studies**: Ver.1 for testing different visual configurations
+2. **Word Exclusion Research**: Ver.2 for systematic stop-word effectiveness studies
+3. **Accessibility Compliance**: Ver.2 demonstrates WCAG 2.1 Level AA implementation
+4. **Comparative Analysis**: Both versions can analyze the same data with different approaches
+
+#### Production Considerations
+- **Concurrent Operation**: Both versions can run simultaneously on different ports
+- **Data Consistency**: Both use the same processed dataset (`data/processed/all_text_corpus.csv`)
+- **Configuration Export**: Ver.2 includes version metadata in exported configurations
+- **Log Separation**: Independent logging for debugging and monitoring
