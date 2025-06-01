@@ -1,0 +1,196 @@
+{
+  "analysis_results": {
+    "感想文": {
+      "basic_stats": {
+        "records": 21,
+        "avg_text_length": 99.5,
+        "total_words": 333,
+        "unique_words": 146,
+        "vocabulary_density": 0.438
+      },
+      "frequency_distribution": {
+        "high_freq": 5,
+        "medium_freq": 28,
+        "low_freq": 113
+      },
+      "top_words": {
+        "ござい": 25,
+        "印象": 17,
+        "結晶": 12,
+        "残っ": 12,
+        "実験": 11,
+        "変わっ": 9,
+        "反応": 8,
+        "くれ": 6,
+        "とても": 6,
+        "理科": 5,
+        "授業": 5,
+        "ので": 5,
+        "楽しかっ": 5,
+        "教え": 4,
+        "みたい": 4,
+        "おもしろかっ": 4,
+        "分かり": 4,
+        "とくに": 4,
+        "とき": 4,
+        "すごかっ": 4
+      },
+      "recommended_params": {
+        "max_words": 140,
+        "min_font_size": 20,
+        "max_font_size": 160,
+        "prefer_horizontal": 0.9,
+        "relative_scaling": 0.3,
+        "width": 1400,
+        "height": 800,
+        "strategy": "comprehensive"
+      }
+    },
+    "Q2理由_授業前": {
+      "basic_stats": {
+        "records": 84,
+        "avg_text_length": 13.0,
+        "total_words": 167,
+        "unique_words": 58,
+        "vocabulary_density": 0.347
+      },
+      "frequency_distribution": {
+        "high_freq": 2,
+        "medium_freq": 10,
+        "low_freq": 46
+      },
+      "top_words": {
+        "みそ": 61,
+        "食塩": 10,
+        "とけ": 7,
+        "しょっぱく": 4,
+        "はいっ": 4,
+        "しょっぱい": 4,
+        "塩分": 4,
+        "なる": 3,
+        "成分": 3,
+        "使っ": 3,
+        "しょうゆ": 3,
+        "しる": 3,
+        "含ま": 2,
+        "溶け": 2,
+        "入れ": 2,
+        "溶かし": 2,
+        "作っ": 2,
+        "まざっ": 2,
+        "てる": 2,
+        "ぶん": 2
+      },
+      "recommended_params": {
+        "max_words": 87.0,
+        "min_font_size": 24,
+        "max_font_size": 180,
+        "prefer_horizontal": 0.85,
+        "relative_scaling": 0.4,
+        "width": 1200,
+        "height": 700,
+        "strategy": "balanced"
+      }
+    },
+    "Q2理由_授業後": {
+      "basic_stats": {
+        "records": 95,
+        "avg_text_length": 14.0,
+        "total_words": 190,
+        "unique_words": 52,
+        "vocabulary_density": 0.274
+      },
+      "frequency_distribution": {
+        "high_freq": 4,
+        "medium_freq": 9,
+        "low_freq": 39
+      },
+      "top_words": {
+        "みそ": 40,
+        "ナトリウム": 38,
+        "とけ": 15,
+        "塩分": 10,
+        "はいっ": 6,
+        "ふくま": 5,
+        "しょっぱい": 5,
+        "食塩": 5,
+        "成分": 5,
+        "なる": 4,
+        "しお": 3,
+        "しる": 3,
+        "ある": 3,
+        "もの": 2,
+        "など": 2,
+        "ふくん": 2,
+        "溶け": 2,
+        "それ": 2,
+        "塩化ナトリウム": 2,
+        "入れ": 2
+      },
+      "recommended_params": {
+        "max_words": 78.0,
+        "min_font_size": 24,
+        "max_font_size": 198.00000000000003,
+        "prefer_horizontal": 0.85,
+        "relative_scaling": 0.48,
+        "width": 1200,
+        "height": 700,
+        "strategy": "balanced"
+      }
+    }
+  },
+  "optimization_strategies": {
+    "感想文": {
+      "type": "多語彙網羅型",
+      "focus": "多様な語彙の階層的表示",
+      "warnings": [
+        "情報過多リスク",
+        "小文字の可読性"
+      ],
+      "params": {
+        "max_words": 140,
+        "min_font_size": 20,
+        "max_font_size": 160,
+        "prefer_horizontal": 0.9,
+        "relative_scaling": 0.3,
+        "width": 1400,
+        "height": 800,
+        "strategy": "comprehensive"
+      }
+    },
+    "Q2理由_授業前": {
+      "type": "中語彙バランス型",
+      "focus": "重要語彙とサポート語彙のバランス",
+      "warnings": [
+        "中程度の情報密度"
+      ],
+      "params": {
+        "max_words": 87.0,
+        "min_font_size": 24,
+        "max_font_size": 180,
+        "prefer_horizontal": 0.85,
+        "relative_scaling": 0.4,
+        "width": 1200,
+        "height": 700,
+        "strategy": "balanced"
+      }
+    },
+    "Q2理由_授業後": {
+      "type": "中語彙バランス型",
+      "focus": "重要語彙とサポート語彙のバランス",
+      "warnings": [
+        "中程度の情報密度"
+      ],
+      "params": {
+        "max_words": 78.0,
+        "min_font_size": 24,
+        "max_font_size": 198.00000000000003,
+        "prefer_horizontal": 0.85,
+        "relative_scaling": 0.48,
+        "width": 1200,
+        "height": 700,
+        "strategy": "balanced"
+      }
+    }
+  }
+}
