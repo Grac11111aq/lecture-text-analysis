@@ -391,3 +391,74 @@ wordcloud_app/
   - Visual parameter controls
 - **Statistics Display**: Shows total words analyzed, increased/decreased counts
 - **Responsive Design**: Mobile-friendly with proper touch support
+
+## Major Updates (2025-06-02) - Word Tree & Co-occurrence Network Implementation
+
+### New Visualization Features in Ver.2 Application
+- **Purpose**: Expand text analysis capabilities with context and relationship visualizations
+- **Implementation**: Added two new tabs to Ver.2 application (localhost:5002)
+- **Technologies**: D3.js for Word Tree, vis.js for Co-occurrence Network
+
+#### 🌳 **Word Tree Visualization**
+- **Context Analysis**: Shows how words are used in different contexts
+- **Automatic Root Word Selection**: 
+  - Science terms: 塩, ナトリウム, 塩化ナトリウム
+  - Experiment terms: 炎色反応, 結晶, 実験
+  - Emotion terms: 楽しかった, わかった, 面白い, すごい
+  - Action terms: 見る, 観察, やる, 知る
+- **Customizable Parameters**:
+  - Tree depth (1-5 levels)
+  - Maximum root words (1-5)
+  - Custom root word input
+  - Word exclusion categories
+
+#### 🔗 **Co-occurrence Network Visualization**  
+- **Relationship Analysis**: Visualizes word co-occurrence patterns
+- **Association Metrics**:
+  - PMI (Pointwise Mutual Information) - default
+  - Jaccard coefficient
+  - Simple frequency count
+- **Network Parameters**:
+  - Window size: Sentence-level or N-word window (1-10)
+  - Node filtering: Minimum frequency threshold
+  - Edge filtering: Minimum co-occurrence weight
+  - Maximum nodes: 10-100 (default: 50)
+- **Interactive Features**: 
+  - Node hover for details
+  - Click to select nodes
+  - Physics-based layout (ForceAtlas2)
+
+#### Technical Implementation
+- **Backend Classes**:
+  - `WordTreeGenerator`: D3.js data preparation, sentence tokenization, context extraction
+  - `CooccurrenceNetworkGenerator`: NetworkX-based co-occurrence calculation, vis.js data formatting
+- **API Endpoints**:
+  - `/api/word-tree-generate`: Generate word tree data
+  - `/api/cooccurrence-generate`: Generate network data
+  - `/api/recommended-roots`: Get recommended root words
+- **Frontend Integration**:
+  - Unified design system with existing accessible colors
+  - Responsive layout for both visualizations
+  - Consistent parameter controls across all tabs
+
+#### Visual Design Consistency
+- **Color Scheme**: Uses project's accessible colors
+  - Orange (#d06500) for emphasis/root nodes
+  - Blue (#0066cc) for standard elements
+  - Brown (#331a00) for science terms
+- **Typography**: Yu Gothic UI / Meiryo UI for Japanese text
+- **Layout**: Fixed 600px height containers with responsive width
+
+### Dependencies Update
+- Added `networkx>=3.0` to requirements.txt for co-occurrence network analysis
+
+### Usage Instructions
+```bash
+# Start Ver.2 application
+cd /home/grace/projects/social-implement/lecture-survey-analysis/lecture-text-analysis
+source venv/bin/activate
+python wordcloud_app/app_v2.py
+
+# Access at http://localhost:5002
+# Navigate between tabs: Standard → Difference → Word Tree → Co-occurrence Network
+```
