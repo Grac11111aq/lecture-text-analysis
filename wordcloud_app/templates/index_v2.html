@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>東京高専 出前授業分析 Ver.2 - 単語除外テスト版</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style_v2.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- ヘッダー -->
+        <header class="header">
+            <h1><i class="fas fa-filter"></i> 東京高専 出前授業分析 Ver.2</h1>
+            <p class="subtitle">単語除外テスト版 - アクセシビリティ改善・固定ビジュアルパラメータ</p>
+            <div class="version-info">
+                <span class="badge">WCAG 2.1 Level AA準拠</span>
+                <span class="badge">固定パラメータ版</span>
+                <span class="badge">ポート: 5002</span>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- 設定パネル -->
+            <div class="settings-panel">
+                <div class="panel-header">
+                    <h2><i class="fas fa-sliders-h"></i> 単語除外設定</h2>
+                </div>
+
+                <!-- 固定パラメータ表示 -->
+                <div class="fixed-params-info">
+                    <h3><i class="fas fa-lock"></i> 固定ビジュアルパラメータ</h3>
+                    <div class="param-grid">
+                        <div class="param-item">
+                            <span class="param-label">最小フォント:</span>
+                            <span class="param-value">24px</span>
+                        </div>
+                        <div class="param-item">
+                            <span class="param-label">最大フォント:</span>
+                            <span class="param-value">174px</span>
+                        </div>
+                        <div class="param-item">
+                            <span class="param-label">水平配置率:</span>
+                            <span class="param-value">90%</span>
+                        </div>
+                        <div class="param-item">
+                            <span class="param-label">相対スケーリング:</span>
+                            <span class="param-value">0.4</span>
+                        </div>
+                        <div class="param-item">
+                            <span class="param-label">最大単語数:</span>
+                            <span class="param-value">140</span>
+                        </div>
+                        <div class="param-item">
+                            <span class="param-label">背景色:</span>
+                            <span class="param-value">#f8f8f8</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- テキストソース選択 -->
+                <div class="setting-group">
+                    <h3><i class="fas fa-file-alt"></i> データソース</h3>
+                    
+                    <div class="form-group">
+                        <label for="textSource">分析対象:</label>
+                        <select id="textSource" class="form-control" aria-label="分析対象のデータを選択">
+                            <option value="all_responses">全回答（統合）</option>
+                            <option value="comments">感想文のみ</option>
+                            <option value="q2_before">授業前（なぜしょっぱい？）</option>
+                            <option value="q2_after">授業後（なぜしょっぱい？）</option>
+                            <option value="custom">カスタム</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="customTextGroup" style="display: none;">
+                        <label for="customText">カスタムテキスト:</label>
+                        <textarea id="customText" class="form-control" rows="4" 
+                                  placeholder="ここにテキストを入力してください..."
+                                  aria-label="カスタムテキスト入力"></textarea>
+                    </div>
+                </div>
+
+                <!-- 単語除外設定 -->
+                <div class="setting-group">
+                    <h3><i class="fas fa-filter"></i> 単語除外設定</h3>
+                    
+                    <div class="exclude-categories">
+                        <h4>除外カテゴリー:</h4>
+                        <div class="category-checkboxes">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="excludeGeneral" value="general">
+                                <span>一般的な単語（よう、こと、もの等）</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="excludeThanks" value="thanks">
+                                <span>感謝の表現（ありがとう、ございます等）</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="excludeSchool" value="school">
+                                <span>学校関連（東京高専、授業、先生等）</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="excludeExperiment" value="experiment">
+                                <span>実験関連（実験、観察、やり等）</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="customExcludeWords">カスタム除外単語（カンマ区切り）:</label>
+                        <textarea id="customExcludeWords" class="form-control" rows="3" 
+                                  placeholder="例: 塩, ナトリウム, 面白い"
+                                  aria-label="カスタム除外単語入力"></textarea>
+                    </div>
+                </div>
+
+                <!-- フォント・サイズ設定 -->
+                <div class="setting-group">
+                    <h3><i class="fas fa-text-height"></i> 基本設定</h3>
+                    
+                    <div class="form-group">
+                        <label for="fontSelect">日本語フォント:</label>
+                        <select id="fontSelect" class="form-control" aria-label="日本語フォントの選択">
+                            <option value="">読み込み中...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="width">幅 (px):</label>
+                            <input type="number" id="width" class="form-control" 
+                                   min="400" max="2000" value="1000"
+                                   aria-label="画像の幅">
+                        </div>
+                        <div class="form-group half">
+                            <label for="height">高さ (px):</label>
+                            <input type="number" id="height" class="form-control" 
+                                   min="300" max="1500" value="600"
+                                   aria-label="画像の高さ">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- カラーマップ設定 -->
+                <div class="setting-group">
+                    <h3><i class="fas fa-palette"></i> アクセシブルカラー設定</h3>
+                    
+                    <div class="color-info">
+                        <p class="info-text">
+                            <i class="fas fa-info-circle"></i>
+                            WCAG 2.1 Level AA準拠のカラースキーム
+                        </p>
+                        <div class="color-samples">
+                            <div class="color-sample" style="background-color: #d06500;">
+                                <span>オレンジ</span>
+                            </div>
+                            <div class="color-sample" style="background-color: #0066cc;">
+                                <span>ブルー</span>
+                            </div>
+                            <div class="color-sample" style="background-color: #331a00;">
+                                <span>ブラウン</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="colormap">カラーマップ:</label>
+                        <select id="colormap" class="form-control" aria-label="カラーマップの選択">
+                            <option value="accessible_three">アクセシブル3色</option>
+                            <option value="orange_focused">オレンジ中心</option>
+                            <option value="blue_focused">ブルー中心</option>
+                            <option value="balanced">バランス</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- アクションボタン -->
+                <div class="action-buttons">
+                    <button id="generateBtn" class="btn btn-primary btn-large" 
+                            aria-label="ワードクラウドを生成">
+                        <i class="fas fa-magic"></i> 生成
+                    </button>
+                    <button id="exportConfig" class="btn btn-secondary"
+                            aria-label="設定をエクスポート">
+                        <i class="fas fa-download"></i> 設定エクスポート
+                    </button>
+                    <button id="resetBtn" class="btn btn-outline"
+                            aria-label="設定をリセット">
+                        <i class="fas fa-refresh"></i> リセット
+                    </button>
+                </div>
+            </div>
+
+            <!-- プレビューエリア -->
+            <div class="preview-panel">
+                <div class="panel-header">
+                    <h2><i class="fas fa-eye"></i> プレビュー</h2>
+                    <div class="preview-controls">
+                        <button id="downloadImage" class="btn btn-secondary" 
+                                title="画像ダウンロード" style="display: none;"
+                                aria-label="画像をダウンロード">
+                            <i class="fas fa-download"></i> ダウンロード
+                        </button>
+                    </div>
+                </div>
+
+                <div class="preview-container">
+                    <div id="loadingIndicator" class="loading-indicator" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>ワードクラウドを生成中...</p>
+                    </div>
+                    
+                    <div id="errorMessage" class="error-message" style="display: none;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p id="errorText">エラーが発生しました</p>
+                    </div>
+                    
+                    <div id="previewImage" class="preview-image" style="display: none;">
+                        <img id="wordcloudImg" alt="生成されたワードクラウド">
+                    </div>
+                    
+                    <div id="welcomeMessage" class="welcome-message">
+                        <i class="fas fa-filter fa-3x"></i>
+                        <h3>単語除外テスト版</h3>
+                        <p>除外したい単語を選択して、より意味のあるワードクラウドを生成します</p>
+                        <div class="feature-list">
+                            <div class="feature-item">
+                                <i class="fas fa-check-circle"></i>
+                                <span>固定ビジュアルパラメータで一貫性のある結果</span>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-check-circle"></i>
+                                <span>WCAG 2.1準拠のアクセシブルカラー</span>
+                            </div>
+                            <div class="feature-item">
+                                <i class="fas fa-check-circle"></i>
+                                <span>カテゴリー別の単語除外機能</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary btn-large" onclick="generateWordCloud()" 
+                                aria-label="分析を開始">
+                            <i class="fas fa-magic"></i> 分析を開始
+                        </button>
+                    </div>
+                </div>
+
+                <!-- メタ情報 -->
+                <div id="metaInfo" class="meta-info" style="display: none;">
+                    <div class="meta-row">
+                        <span class="meta-label">フォント:</span>
+                        <span id="metaFont">-</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">サイズ:</span>
+                        <span id="metaSize">-</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">カラーマップ:</span>
+                        <span id="metaColormap">-</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">除外カテゴリー:</span>
+                        <span id="metaExcluded">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast通知 -->
+    <div id="toast" class="toast" role="alert" aria-live="polite">
+        <div class="toast-content">
+            <i class="toast-icon"></i>
+            <span class="toast-message"></span>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app_v2.js') }}"></script>
+</body>
+</html>

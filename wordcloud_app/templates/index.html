@@ -123,17 +123,14 @@
                     <h3><i class="fas fa-palette"></i> 色・スタイル設定</h3>
                     
                     <div class="form-group">
-                        <label for="backgroundColor">背景色:</label>
-                        <div class="color-picker-container">
-                            <input type="color" id="backgroundColorPicker" value="#d3d3d3">
-                            <select id="backgroundColor" class="form-control">
-                                <option value="lightgray">グレー</option>
-                                <option value="white">白</option>
-                                <option value="black">黒</option>
-                                <option value="darkgray">ダークグレー</option>
-                                <option value="#f0f0f0">ライトグレー</option>
-                            </select>
+                        <label for="backgroundBrightness">背景色（明るさ）:</label>
+                        <input type="range" id="backgroundBrightness" class="range-control" 
+                               min="0" max="100" value="50" step="1">
+                        <span class="range-value" id="backgroundBrightnessValue">95%</span>
+                        <div class="brightness-info">
+                            <small class="text-muted">0% = 90%明度（暗め）｜ 50% = 95%明度 ｜ 100% = 100%明度（最明）</small>
                         </div>
+                        <div class="background-preview" id="backgroundPreview"></div>
                     </div>
 
                     <div class="form-group">
@@ -141,6 +138,70 @@
                         <select id="colormap" class="form-control">
                             <option value="">読み込み中...</option>
                         </select>
+                    </div>
+
+                    <!-- カスタムカラーマップ設定 -->
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="useCustomColors" aria-label="カスタムカラーマップを使用"> 
+                            カスタムカラーマップを使用
+                        </label>
+                    </div>
+
+                    <div id="customColorGroup" class="custom-color-group" style="display: none;">
+                        <label>3色系統から選択:</label>
+                        
+                        <div class="color-category">
+                            <h4><i class="fas fa-circle" style="color: #FF8800;"></i> オレンジ系</h4>
+                            <select id="orangeColor" class="form-control color-select">
+                                <option value="#FF4500">朱色 (OrangeRed)</option>
+                                <option value="#FF6347">トマト色 (Tomato)</option>
+                                <option value="#FF7F50">珊瑚色 (Coral)</option>
+                                <option value="#FFA500">オレンジ (Orange)</option>
+                                <option value="#FF8C00">ダークオレンジ (DarkOrange)</option>
+                                <option value="#FFB84D">ゴールドオレンジ</option>
+                                <option value="#CC4400" selected>濃いオレンジ</option>
+                                <option value="#B8860B">ダークゴールド</option>
+                                <option value="#D2691E">チョコレート</option>
+                                <option value="#CD853F">ペルー</option>
+                            </select>
+                        </div>
+
+                        <div class="color-category">
+                            <h4><i class="fas fa-circle" style="color: #666666;"></i> ダークグレー系</h4>
+                            <select id="grayColor" class="form-control color-select">
+                                <option value="#2F2F2F">チャコール</option>
+                                <option value="#404040" selected>ダークグレー</option>
+                                <option value="#555555">スレートグレー</option>
+                                <option value="#696969">ディムグレー</option>
+                                <option value="#708090">スレート</option>
+                                <option value="#778899">ライトスレート</option>
+                                <option value="#36454F">チャコールグレー</option>
+                                <option value="#36363A">ガンメタル</option>
+                                <option value="#4A4A4A">グラファイト</option>
+                                <option value="#1C1C1C">ソフトブラック</option>
+                            </select>
+                        </div>
+
+                        <div class="color-category">
+                            <h4><i class="fas fa-circle" style="color: #003366;"></i> ブルー系</h4>
+                            <select id="blueColor" class="form-control color-select">
+                                <option value="#000080">ネイビー (Navy)</option>
+                                <option value="#191970">ミッドナイトブルー</option>
+                                <option value="#003366" selected>深藍色</option>
+                                <option value="#002D5A">プルシアンブルー</option>
+                                <option value="#1E3A8A">ロイヤルブルー深色</option>
+                                <option value="#1E90FF">ドジャーブルー</option>
+                                <option value="#4169E1">ロイヤルブルー</option>
+                                <option value="#0066CC">アジュール</option>
+                                <option value="#4682B4">スチールブルー</option>
+                                <option value="#5F9EA0">カデットブルー</option>
+                            </select>
+                        </div>
+
+                        <button id="previewCustomColors" class="btn btn-outline btn-sm">
+                            <i class="fas fa-eye"></i> カラーマップをプレビュー
+                        </button>
                     </div>
 
                     <div class="form-group">
@@ -157,7 +218,10 @@
                         <i class="fas fa-magic"></i> 生成
                     </button>
                     <button id="exportConfig" class="btn btn-secondary">
-                        <i class="fas fa-download"></i> 設定エクスポート
+                        <i class="fas fa-download"></i> ファイルエクスポート
+                    </button>
+                    <button id="copyToClipboard" class="btn btn-secondary">
+                        <i class="fas fa-clipboard"></i> クリップボードにコピー
                     </button>
                     <button id="resetBtn" class="btn btn-outline">
                         <i class="fas fa-refresh"></i> リセット

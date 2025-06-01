@@ -98,9 +98,9 @@ class WordCloudApp {
         
         // 全ての設定コントロールに変更イベント
         const controls = [
-            'fontSelect', 'width', 'height', 'maxWords', 'backgroundColor', 
+            'fontSelect', 'width', 'height', 'maxWords', 'backgroundBrightness', 
             'colormap', 'minFontSize', 'maxFontSize', 'relativeScaling', 
-            'preferHorizontal', 'collocations'
+            'preferHorizontal', 'collocations', 'useCustomColors'
         ];
         
         controls.forEach(id => {
@@ -115,10 +115,29 @@ class WordCloudApp {
             }
         });
         
-        // 背景色ピッカー
-        document.getElementById('backgroundColorPicker').addEventListener('change', (e) => {
-            document.getElementById('backgroundColor').value = e.target.value;
+        // 背景色明度スライダー
+        document.getElementById('backgroundBrightness').addEventListener('input', (e) => {
+            this.updateBackgroundPreview(e.target.value);
             this.scheduleGeneration();
+        });
+        
+        // カスタムカラーマップのチェックボックス
+        document.getElementById('useCustomColors').addEventListener('change', (e) => {
+            this.handleCustomColorsToggle(e.target.checked);
+        });
+        
+        // 3色系統の選択イベント
+        ['orangeColor', 'grayColor', 'blueColor'].forEach(id => {
+            document.getElementById(id).addEventListener('change', () => {
+                if (document.getElementById('useCustomColors').checked) {
+                    this.scheduleGeneration();
+                }
+            });
+        });
+        
+        // カスタムカラープレビューボタン
+        document.getElementById('previewCustomColors').addEventListener('click', () => {
+            this.previewCustomColors();
         });
         
         // ボタンイベント
@@ -138,6 +157,10 @@ class WordCloudApp {
             this.exportConfig();
         });
         
+        document.getElementById('copyToClipboard').addEventListener('click', () => {
+            this.copyConfigToClipboard();
+        });
+        
         document.getElementById('downloadImage').addEventListener('click', () => {
             this.downloadImage();
         });
@@ -153,7 +176,7 @@ class WordCloudApp {
     setupRangeSliders() {
         const sliders = [
             'minFontSize', 'maxFontSize', 'maxWords', 
-            'relativeScaling', 'preferHorizontal'
+            'relativeScaling', 'preferHorizontal', 'backgroundBrightness'
         ];
         
         sliders.forEach(id => {
@@ -162,11 +185,19 @@ class WordCloudApp {
             
             if (slider && valueSpan) {
                 slider.addEventListener('input', (e) => {
-                    valueSpan.textContent = e.target.value;
+                    if (id === 'backgroundBrightness') {
+                        valueSpan.textContent = e.target.value + '%';
+                        this.updateBackgroundPreview(e.target.value);
+                    } else {
+                        valueSpan.textContent = e.target.value;
+                    }
                     this.scheduleGeneration();
                 });
             }
         });
+        
+        // 初期背景色プレビューを設定（スライダー値50 = 95%明度）
+        this.updateBackgroundPreview(50);
     }
     
     handleTextSourceChange(source) {
@@ -188,13 +219,14 @@ class WordCloudApp {
             width: 1000,
             height: 600,
             max_words: 60,
-            background_color: 'lightgray',
+            background_brightness: 50,  // スライダー値50 = 実際の95%明度
             colormap: 'orange_blue',
             min_font_size: 16,
             max_font_size: 90,
             relative_scaling: 0.6,
             prefer_horizontal: 0.8,
-            collocations: false
+            collocations: false,
+            use_custom_colors: false
         };
         
         this.applyConfigToUI(defaults);
@@ -244,13 +276,14 @@ class WordCloudApp {
             width: 'width',
             height: 'height',
             maxWords: 'max_words',
-            backgroundColor: 'background_color',
+            backgroundBrightness: 'background_brightness',
             colormap: 'colormap',
             minFontSize: 'min_font_size',
             maxFontSize: 'max_font_size',
             relativeScaling: 'relative_scaling',
             preferHorizontal: 'prefer_horizontal',
-            collocations: 'collocations'
+            collocations: 'collocations',
+            useCustomColors: 'use_custom_colors'
         };
         
         Object.entries(controls).forEach(([elementId, configKey]) => {
@@ -265,6 +298,20 @@ class WordCloudApp {
                 }
             }
         });
+        
+        // 背景色を明度から生成（スライダー値を実際の明度に変換）
+        const sliderValue = config.background_brightness || 50;
+        config.background_color = this.brightnessToHex(sliderValue);
+        
+        // カスタムカラーが有効な場合、3色系統からカスタムカラーを収集
+        if (config.use_custom_colors) {
+            config.custom_colors = [
+                document.getElementById('orangeColor').value,
+                document.getElementById('grayColor').value,
+                document.getElementById('blueColor').value
+            ];
+            config.colormap = 'custom';
+        }
         
         return config;
     }
@@ -435,6 +482,105 @@ class WordCloudApp {
             link.click();
             
             this.showToast('画像をダウンロードしました', 'success');
+        }
+    }
+    
+    handleCustomColorsToggle(enabled) {
+        const customColorGroup = document.getElementById('customColorGroup');
+        if (enabled) {
+            customColorGroup.style.display = 'block';
+            customColorGroup.classList.add('show');
+            this.showToast('カスタムカラーマップを有効にしました', 'info');
+        } else {
+            customColorGroup.classList.remove('show');
+            setTimeout(() => {
+                customColorGroup.style.display = 'none';
+            }, 400);
+            this.showToast('カスタムカラーマップを無効にしました', 'info');
+        }
+        
+        if (this.autoUpdateEnabled) {
+            this.scheduleGeneration();
+        }
+    }
+    
+    brightnessToHex(brightness) {
+        // スライダー値（0-100）を明るいグレー範囲（90-100%）にマッピング
+        const actualBrightness = 90 + (brightness / 100) * 10;  // 90% - 100%の範囲
+        const value = Math.round((actualBrightness / 100) * 255);
+        const hex = value.toString(16).padStart(2, '0');
+        return `#${hex}${hex}${hex}`;
+    }
+    
+    updateBackgroundPreview(brightness) {
+        const preview = document.getElementById('backgroundPreview');
+        const hexColor = this.brightnessToHex(brightness);
+        
+        if (preview) {
+            preview.style.backgroundColor = hexColor;
+        }
+        
+        // 実際の明度値を表示（90-100%の範囲）
+        const valueSpan = document.getElementById('backgroundBrightnessValue');
+        if (valueSpan) {
+            const actualBrightness = 90 + (brightness / 100) * 10;
+            valueSpan.textContent = actualBrightness.toFixed(1) + '%';
+        }
+    }
+    
+    previewCustomColors() {
+        const orangeColor = document.getElementById('orangeColor').value;
+        const grayColor = document.getElementById('grayColor').value;  
+        const blueColor = document.getElementById('blueColor').value;
+        
+        const colors = [orangeColor, grayColor, blueColor];
+        
+        this.showToast(`カスタムカラー: オレンジ系(${orangeColor}) グレー系(${grayColor}) ブルー系(${blueColor})`, 'info');
+        
+        // カスタムカラーマップを使用するようにチェック
+        document.getElementById('useCustomColors').checked = true;
+        this.handleCustomColorsToggle(true);
+        
+        if (this.autoUpdateEnabled) {
+            this.scheduleGeneration();
+        }
+    }
+    
+    async copyConfigToClipboard() {
+        try {
+            const config = this.getCurrentConfig();
+            
+            // JSON形式で設定をフォーマット
+            const configJson = JSON.stringify(config, null, 2);
+            
+            // クリップボード API を使用
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(configJson);
+                this.showToast('設定をクリップボードにコピーしました', 'success');
+            } else {
+                // フォールバック: テキストエリアを使用
+                const textArea = document.createElement('textarea');
+                textArea.value = configJson;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-999999px';
+                textArea.style.top = '-999999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                
+                try {
+                    document.execCommand('copy');
+                    this.showToast('設定をクリップボードにコピーしました', 'success');
+                } catch (err) {
+                    this.showToast('クリップボードへのコピーに失敗しました', 'error');
+                }
+                
+                document.body.removeChild(textArea);
+            }
+            
+        } catch (error) {
+            console.error('クリップボードコピーエラー:', error);
+            this.showToast('クリップボードへのコピーに失敗しました', 'error');
         }
     }
     
