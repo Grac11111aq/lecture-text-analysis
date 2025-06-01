@@ -20,9 +20,21 @@
             </div>
         </header>
 
+        <!-- タブナビゲーション -->
+        <nav class="tab-navigation" role="tablist">
+            <button class="tab-button active" role="tab" aria-selected="true" aria-controls="standard-panel" 
+                    id="standard-tab" onclick="switchMode('standard')">
+                <i class="fas fa-cloud"></i> 通常ワードクラウド
+            </button>
+            <button class="tab-button" role="tab" aria-selected="false" aria-controls="difference-panel" 
+                    id="difference-tab" onclick="switchMode('difference')">
+                <i class="fas fa-balance-scale"></i> 差分ワードクラウド
+            </button>
+        </nav>
+
         <div class="main-content">
-            <!-- 設定パネル -->
-            <div class="settings-panel">
+            <!-- 通常モード設定パネル -->
+            <div id="standard-panel" class="settings-panel mode-panel" role="tabpanel" aria-labelledby="standard-tab">
                 <div class="panel-header">
                     <h2><i class="fas fa-sliders-h"></i> 単語除外設定</h2>
                 </div>
@@ -192,6 +204,224 @@
                 </div>
             </div>
 
+            <!-- 差分モード設定パネル -->
+            <div id="difference-panel" class="settings-panel mode-panel" role="tabpanel" aria-labelledby="difference-tab" style="display: none;">
+                <div class="panel-header">
+                    <h2><i class="fas fa-balance-scale"></i> 差分分析設定</h2>
+                </div>
+
+                <!-- 比較データ設定 -->
+                <div class="setting-group">
+                    <h3><i class="fas fa-layer-group"></i> 比較データ選択</h3>
+                    
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="baseDataset">基準データ:</label>
+                            <select id="baseDataset" class="form-control" aria-label="基準データセットの選択">
+                                <option value="q2_before">授業前（なぜしょっぱい？）</option>
+                                <option value="comments">感想文のみ</option>
+                                <option value="all_responses">全回答（統合）</option>
+                            </select>
+                        </div>
+                        <div class="form-group half">
+                            <label for="compareDataset">比較データ:</label>
+                            <select id="compareDataset" class="form-control" aria-label="比較データセットの選択">
+                                <option value="q2_after">授業後（なぜしょっぱい？）</option>
+                                <option value="comments">感想文のみ</option>
+                                <option value="all_responses">全回答（統合）</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 差分計算方法 -->
+                <div class="setting-group">
+                    <h3><i class="fas fa-calculator"></i> 差分計算方法</h3>
+                    
+                    <div class="form-group">
+                        <label for="calculationMethod">計算方式:</label>
+                        <select id="calculationMethod" class="form-control" aria-label="差分計算方式の選択">
+                            <option value="frequency_difference">頻度差（新出現語を大幅強調）</option>
+                            <option value="relative_difference">相対差分（変化率重視）</option>
+                            <option value="log_ratio">対数比（統計的安定性）</option>
+                        </select>
+                        
+                        <div class="calculation-method-info">
+                            <div class="method-explanation">
+                                <h5><i class="fas fa-info-circle"></i> 計算方式の特徴</h5>
+                                <div class="method-details">
+                                    <div class="method-item" id="freq-diff-info">
+                                        <strong>頻度差</strong>: 新出現語（例：ナトリウム）を大きく強調。教育効果が視覚的に明確
+                                    </div>
+                                    <div class="method-item" id="relative-diff-info">
+                                        <strong>相対差分</strong>: 変化率を重視。小さな語の重要な変化も検出
+                                    </div>
+                                    <div class="method-item" id="log-ratio-info">
+                                        <strong>対数比</strong>: 統計的に安定。研究論文レベルの分析に適用
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="minOccurrence">最小出現回数:</label>
+                            <input type="number" id="minOccurrence" class="form-control" 
+                                   min="1" max="10" value="1"
+                                   aria-label="最小出現回数">
+                        </div>
+                        <div class="form-group half">
+                            <label for="minDifference">最小差分閾値:</label>
+                            <input type="number" id="minDifference" class="form-control" 
+                                   min="0.01" max="1" step="0.01" value="0.1"
+                                   aria-label="最小差分閾値">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 科学用語ハイライト -->
+                <div class="setting-group">
+                    <h3><i class="fas fa-flask"></i> 科学用語強調</h3>
+                    
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="scienceHighlight" checked>
+                            <span>科学用語をハイライト表示</span>
+                        </label>
+                    </div>
+
+                    <div class="science-terms-info">
+                        <div class="term-level">
+                            <span class="level-label basic">基礎:</span>
+                            <span class="terms">塩, 食塩, 塩分</span>
+                        </div>
+                        <div class="term-level">
+                            <span class="level-label intermediate">中級:</span>
+                            <span class="terms">ナトリウム, 塩化ナトリウム</span>
+                        </div>
+                        <div class="term-level">
+                            <span class="level-label advanced">上級:</span>
+                            <span class="terms">Na, NaCl, イオン, Na+</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 除外単語設定（共通） -->
+                <div class="setting-group">
+                    <h3><i class="fas fa-filter"></i> 除外単語設定</h3>
+                    
+                    <div class="checkbox-group">
+                        <div class="checkbox-grid">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="diffExcludeGeneral" value="general" checked>
+                                <span>一般的単語（みなさん、今日等）</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="diffExcludeThanks" value="thanks" checked>
+                                <span>感謝表現（ありがとう等）</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="diffExcludeSchool" value="school">
+                                <span>学校関連（東京高専、授業等）</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="diffExcludeExperiment" value="experiment">
+                                <span>実験関連（実験、観察等）</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="diffCustomExcludeWords">カスタム除外単語（カンマ区切り）:</label>
+                        <textarea id="diffCustomExcludeWords" class="form-control" rows="3" 
+                                  placeholder="例: 東京, 高専, 面白い"
+                                  aria-label="差分分析用カスタム除外単語入力"></textarea>
+                    </div>
+                </div>
+
+                <!-- 差分カラーマップ -->
+                <div class="setting-group">
+                    <h3><i class="fas fa-palette"></i> 差分カラーマップ</h3>
+                    
+                    <div class="difference-color-info">
+                        <div class="color-legend">
+                            <div class="legend-item">
+                                <div class="color-box increase-unified"></div>
+                                <span>増加語（新出現・頻度増加）</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="color-box decrease-unified"></div>
+                                <span>減少語（消失・頻度減少）</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="color-box common-unified"></div>
+                                <span>共通語（変化なし）</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="color-box science-unified"></div>
+                                <span>科学用語（特別強調）</span>
+                            </div>
+                        </div>
+                        <div class="unified-colors-note">
+                            <i class="fas fa-palette"></i>
+                            <span>Ver.2統一カラー: アクセシブル準拠デザイン</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="differenceColormap">差分カラーマップ:</label>
+                        <select id="differenceColormap" class="form-control" aria-label="差分カラーマップの選択">
+                            <option value="difference_standard">標準差分（7色グラデーション）</option>
+                            <option value="science_focused">科学教育特化（4色）</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- フォント・サイズ設定（共通） -->
+                <div class="setting-group">
+                    <h3><i class="fas fa-text-height"></i> 基本設定</h3>
+                    
+                    <div class="form-group">
+                        <label for="diffFontSelect">日本語フォント:</label>
+                        <select id="diffFontSelect" class="form-control" aria-label="差分用日本語フォントの選択">
+                            <option value="">読み込み中...</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="diffWidth">幅 (px):</label>
+                            <input type="number" id="diffWidth" class="form-control" 
+                                   min="400" max="2000" value="1200"
+                                   aria-label="差分ワードクラウドの幅">
+                        </div>
+                        <div class="form-group half">
+                            <label for="diffHeight">高さ (px):</label>
+                            <input type="number" id="diffHeight" class="form-control" 
+                                   min="300" max="1500" value="800"
+                                   aria-label="差分ワードクラウドの高さ">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- アクションボタン -->
+                <div class="action-buttons">
+                    <button id="diffGenerateBtn" class="btn btn-primary btn-large" 
+                            aria-label="差分ワードクラウドを生成">
+                        <i class="fas fa-balance-scale"></i> 差分分析実行
+                    </button>
+                    <button id="diffExportConfig" class="btn btn-secondary"
+                            aria-label="差分設定をエクスポート">
+                        <i class="fas fa-download"></i> 設定エクスポート
+                    </button>
+                    <button id="diffResetBtn" class="btn btn-outline"
+                            aria-label="差分設定をリセット">
+                        <i class="fas fa-refresh"></i> リセット
+                    </button>
+                </div>
+            </div>
+
             <!-- プレビューエリア -->
             <div class="preview-panel">
                 <div class="panel-header">
@@ -262,6 +492,73 @@
                     <div class="meta-row">
                         <span class="meta-label">除外カテゴリー:</span>
                         <span id="metaExcluded">-</span>
+                    </div>
+                </div>
+
+                <!-- 差分統計情報パネル -->
+                <div id="statisticsInfo" class="statistics-info" style="display: none;">
+                    <div class="stats-header">
+                        <h3><i class="fas fa-chart-bar"></i> 差分分析結果</h3>
+                    </div>
+
+                    <div class="stats-grid">
+                        <!-- 基本統計 -->
+                        <div class="stats-section">
+                            <h4><i class="fas fa-info-circle"></i> 基本統計</h4>
+                            <div class="stats-row">
+                                <span class="stats-label">総語彙数変化:</span>
+                                <span id="statsTotalWords">-</span>
+                            </div>
+                            <div class="stats-row">
+                                <span class="stats-label">固有語彙数変化:</span>
+                                <span id="statsUniqueWords">-</span>
+                            </div>
+                        </div>
+
+                        <!-- 語彙変化 -->
+                        <div class="stats-section">
+                            <h4><i class="fas fa-arrow-up"></i> 語彙変化</h4>
+                            <div class="stats-row">
+                                <span class="stats-label">新出現語数:</span>
+                                <span id="statsNewWords" class="increase">-</span>
+                            </div>
+                            <div class="stats-row">
+                                <span class="stats-label">消失語数:</span>
+                                <span id="statsLostWords" class="decrease">-</span>
+                            </div>
+                            <div class="stats-row">
+                                <span class="stats-label">増加語数:</span>
+                                <span id="statsIncreasedWords" class="increase">-</span>
+                            </div>
+                            <div class="stats-row">
+                                <span class="stats-label">減少語数:</span>
+                                <span id="statsDecreasedWords" class="decrease">-</span>
+                            </div>
+                        </div>
+
+                        <!-- 科学用語変化 -->
+                        <div class="stats-section">
+                            <h4><i class="fas fa-flask"></i> 科学用語変化</h4>
+                            <div id="scienceTermsStats">
+                                <!-- JavaScriptで動的に追加 -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TOP変化語 -->
+                    <div class="top-changes">
+                        <div class="top-section">
+                            <h4><i class="fas fa-plus"></i> TOP5 新出現語</h4>
+                            <div id="topNewWords" class="word-list">
+                                <!-- JavaScriptで動的に追加 -->
+                            </div>
+                        </div>
+                        <div class="top-section">
+                            <h4><i class="fas fa-minus"></i> TOP5 消失語</h4>
+                            <div id="topLostWords" class="word-list">
+                                <!-- JavaScriptで動的に追加 -->
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -10,6 +10,12 @@ class WordCloudAppV2 {
         this.stopWordCategories = {};
         this.generateTimeout = null;
         
+        // 差分機能関連
+        this.currentMode = 'standard'; // 'standard' or 'difference'
+        this.differenceColormaps = {};
+        this.scienceTerms = {};
+        this.lastStatistics = {};
+        
         this.init();
     }
     
@@ -27,12 +33,14 @@ class WordCloudAppV2 {
     
     async loadInitialData() {
         try {
-            // 並列でデータ読み込み
-            const [fontsData, textsData, fixedParamsData, stopWordsData] = await Promise.all([
+            // 並列でデータ読み込み（差分機能データも含む）
+            const [fontsData, textsData, fixedParamsData, stopWordsData, diffColormapsData, scienceTermsData] = await Promise.all([
                 fetch('/api/fonts').then(r => r.json()),
                 fetch('/api/sample-texts').then(r => r.json()),
                 fetch('/api/fixed-params').then(r => r.json()),
-                fetch('/api/stop-words').then(r => r.json())
+                fetch('/api/stop-words').then(r => r.json()),
+                fetch('/api/difference-colormaps').then(r => r.json()),
+                fetch('/api/science-terms').then(r => r.json())
             ]);
             
             this.fonts = fontsData.fonts;
@@ -40,8 +48,11 @@ class WordCloudAppV2 {
             this.fixedParams = fixedParamsData.fixed_params;
             this.accessibleColors = fixedParamsData.accessible_colors;
             this.stopWordCategories = stopWordsData.categories;
+            this.differenceColormaps = diffColormapsData.colormaps;
+            this.scienceTerms = scienceTermsData.science_terms;
             
             this.populateSelects();
+            this.populateDifferenceSelects();
             
         } catch (error) {
             console.error('初期データ読み込みエラー:', error);
@@ -120,6 +131,52 @@ class WordCloudAppV2 {
         document.getElementById('downloadImage').addEventListener('click', () => {
             this.downloadImage();
         });
+        
+        // === 差分機能のイベントリスナー ===
+        
+        // 差分生成ボタン
+        const diffGenerateBtn = document.getElementById('diffGenerateBtn');
+        if (diffGenerateBtn) {
+            diffGenerateBtn.addEventListener('click', () => {
+                this.generateDifferenceWordCloud();
+            });
+        }
+        
+        // 差分設定変更時の自動更新（オプション）
+        ['baseDataset', 'compareDataset', 'calculationMethod', 'differenceColormap'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('change', () => {
+                    // 設定変更をログに記録
+                    console.log(`差分設定変更: ${id} = ${element.value}`);
+                });
+            }
+        });
+        
+        // 差分除外カテゴリーチェックボックス
+        ['diffExcludeGeneral', 'diffExcludeThanks', 'diffExcludeSchool', 'diffExcludeExperiment'].forEach(id => {
+            const checkbox = document.getElementById(id);
+            if (checkbox) {
+                checkbox.addEventListener('change', () => {
+                    console.log(`差分除外カテゴリー変更: ${id} = ${checkbox.checked}`);
+                });
+            }
+        });
+        
+        // 差分設定ボタン
+        const diffExportBtn = document.getElementById('diffExportConfig');
+        if (diffExportBtn) {
+            diffExportBtn.addEventListener('click', () => {
+                this.exportDifferenceConfig();
+            });
+        }
+        
+        const diffResetBtn = document.getElementById('diffResetBtn');
+        if (diffResetBtn) {
+            diffResetBtn.addEventListener('click', () => {
+                this.resetDifferenceDefaults();
+            });
+        }
     }
     
     setupAccessibility() {
@@ -477,6 +534,334 @@ class WordCloudAppV2 {
             toast.classList.remove('show');
         }, duration);
     }
+    
+    // ===== 差分ワードクラウド機能 =====
+    
+    populateDifferenceSelects() {
+        // 差分用フォント選択肢
+        const diffFontSelect = document.getElementById('diffFontSelect');
+        if (diffFontSelect) {
+            diffFontSelect.innerHTML = '<option value="">デフォルト</option>';
+            Object.entries(this.fonts).forEach(([key, font]) => {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = font.name;
+                diffFontSelect.appendChild(option);
+            });
+        }
+    }
+    
+    switchMode(mode) {
+        this.currentMode = mode;
+        
+        // タブの状態更新
+        document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.remove('active');
+            btn.setAttribute('aria-selected', 'false');
+        });
+        
+        const activeTab = document.getElementById(`${mode}-tab`);
+        if (activeTab) {
+            activeTab.classList.add('active');
+            activeTab.setAttribute('aria-selected', 'true');
+        }
+        
+        // パネルの表示切り替え
+        document.querySelectorAll('.mode-panel').forEach(panel => {
+            panel.style.display = 'none';
+        });
+        
+        const activePanel = document.getElementById(`${mode}-panel`);
+        if (activePanel) {
+            activePanel.style.display = 'block';
+        }
+        
+        // 統計情報の表示制御
+        const statsInfo = document.getElementById('statisticsInfo');
+        const metaInfo = document.getElementById('metaInfo');
+        
+        if (mode === 'difference') {
+            if (statsInfo) statsInfo.style.display = 'none';
+            if (metaInfo) metaInfo.style.display = 'none';
+        } else {
+            if (statsInfo) statsInfo.style.display = 'none';
+            if (metaInfo) metaInfo.style.display = 'none';
+        }
+        
+        // 歓迎メッセージの更新
+        this.updateWelcomeMessage(mode);
+        
+        console.log(`モード切り替え: ${mode}`);
+    }
+    
+    updateWelcomeMessage(mode) {
+        const welcomeMessage = document.getElementById('welcomeMessage');
+        if (!welcomeMessage) return;
+        
+        const icon = welcomeMessage.querySelector('i');
+        const title = welcomeMessage.querySelector('h3');
+        const description = welcomeMessage.querySelector('p');
+        const button = welcomeMessage.querySelector('button');
+        
+        if (mode === 'difference') {
+            icon.className = 'fas fa-balance-scale fa-3x';
+            title.textContent = '差分ワードクラウド分析';
+            description.textContent = '授業前後の語彙変化を可視化し、教育効果を定量的に分析します';
+            button.innerHTML = '<i class="fas fa-balance-scale"></i> 差分分析を開始';
+            button.onclick = () => this.generateDifferenceWordCloud();
+        } else {
+            icon.className = 'fas fa-filter fa-3x';
+            title.textContent = '単語除外テスト版';
+            description.textContent = '除外したい単語を選択して、より意味のあるワードクラウドを生成します';
+            button.innerHTML = '<i class="fas fa-magic"></i> 分析を開始';
+            button.onclick = () => this.generateWordCloud();
+        }
+    }
+    
+    async generateDifferenceWordCloud() {
+        try {
+            const generateBtn = document.getElementById('diffGenerateBtn');
+            if (generateBtn) {
+                generateBtn.disabled = true;
+                generateBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 差分分析中...';
+            }
+            
+            // 差分設定の収集
+            const config = this.collectDifferenceConfig();
+            
+            // 歓迎メッセージを非表示
+            const welcomeMessage = document.getElementById('welcomeMessage');
+            if (welcomeMessage) {
+                welcomeMessage.style.display = 'none';
+            }
+            
+            // API呼び出し
+            const response = await fetch('/api/difference-generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(config)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // ワードクラウド表示
+                this.displayDifferenceResult(result.image, result.statistics);
+                this.showToast('差分ワードクラウド生成完了', 'success');
+            } else {
+                this.showToast(result.error || '差分生成に失敗しました', 'error');
+                if (welcomeMessage) {
+                    welcomeMessage.style.display = 'block';
+                }
+            }
+            
+        } catch (error) {
+            console.error('差分ワードクラウド生成エラー:', error);
+            this.showToast('生成処理でエラーが発生しました', 'error');
+        } finally {
+            const generateBtn = document.getElementById('diffGenerateBtn');
+            if (generateBtn) {
+                generateBtn.disabled = false;
+                generateBtn.innerHTML = '<i class="fas fa-balance-scale"></i> 差分分析実行';
+            }
+        }
+    }
+    
+    collectDifferenceConfig() {
+        return {
+            base_dataset: document.getElementById('baseDataset')?.value || 'q2_before',
+            compare_dataset: document.getElementById('compareDataset')?.value || 'q2_after',
+            calculation_method: document.getElementById('calculationMethod')?.value || 'frequency_difference',
+            min_occurrence: parseInt(document.getElementById('minOccurrence')?.value || '1'),
+            min_difference: parseFloat(document.getElementById('minDifference')?.value || '0.1'),
+            science_highlight: document.getElementById('scienceHighlight')?.checked || false,
+            
+            // 除外カテゴリー
+            exclude_categories: Array.from(document.querySelectorAll('#difference-panel input[type="checkbox"]:checked'))
+                .map(cb => cb.value).filter(v => v !== 'on'),
+            custom_exclude_words: document.getElementById('diffCustomExcludeWords')?.value || '',
+            
+            // 表示設定
+            font: document.getElementById('diffFontSelect')?.value || '',
+            width: parseInt(document.getElementById('diffWidth')?.value || '1200'),
+            height: parseInt(document.getElementById('diffHeight')?.value || '800'),
+            difference_colormap: document.getElementById('differenceColormap')?.value || 'difference_standard',
+            background_color: '#f8f8f8'
+        };
+    }
+    
+    displayDifferenceResult(imageBase64, statistics) {
+        // ワードクラウド画像表示
+        const imgElement = document.getElementById('wordcloudImg');
+        if (imgElement) {
+            imgElement.src = `data:image/png;base64,${imageBase64}`;
+            imgElement.style.display = 'block';
+        }
+        
+        // 統計情報の保存と表示
+        this.lastStatistics = statistics;
+        this.displayStatistics(statistics);
+        
+        // 統計情報パネルを表示
+        const statisticsInfo = document.getElementById('statisticsInfo');
+        if (statisticsInfo) {
+            statisticsInfo.style.display = 'block';
+        }
+    }
+    
+    displayStatistics(stats) {
+        // 基本統計
+        this.updateElement('statsTotalWords', 
+            `${stats.total_words_base || 0} → ${stats.total_words_compare || 0}`);
+        this.updateElement('statsUniqueWords', 
+            `${stats.unique_words_base || 0} → ${stats.unique_words_compare || 0}`);
+        
+        // 語彙変化
+        this.updateElement('statsNewWords', (stats.new_words || []).length);
+        this.updateElement('statsLostWords', (stats.lost_words || []).length);
+        this.updateElement('statsIncreasedWords', (stats.increased_words || []).length);
+        this.updateElement('statsDecreasedWords', (stats.decreased_words || []).length);
+        
+        // 科学用語変化
+        this.displayScienceTermChanges(stats.science_term_changes || {});
+        
+        // TOP変化語
+        this.displayTopWords('topNewWords', stats.new_words || [], 'new');
+        this.displayTopWords('topLostWords', stats.lost_words || [], 'lost');
+    }
+    
+    displayScienceTermChanges(changes) {
+        const container = document.getElementById('scienceTermsStats');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        if (Object.keys(changes).length === 0) {
+            container.innerHTML = '<p class="no-data">科学用語の変化はありませんでした</p>';
+            return;
+        }
+        
+        Object.entries(changes).forEach(([term, data]) => {
+            const termDiv = document.createElement('div');
+            termDiv.className = 'science-term-stat';
+            
+            const change = data.change > 0 ? `+${data.change}` : `${data.change}`;
+            const levelClass = data.level || 'basic';
+            
+            termDiv.innerHTML = `
+                <span class="science-term-name">${term}</span>
+                <div class="science-term-change">
+                    <span class="change-before">${data.base}</span>
+                    <span class="change-after">${data.compare}</span>
+                    <span class="change-diff ${data.change > 0 ? 'increase' : 'decrease'}">${change}</span>
+                </div>
+            `;
+            
+            container.appendChild(termDiv);
+        });
+    }
+    
+    displayTopWords(containerId, words, type) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        const topWords = words.slice(0, 5);
+        if (topWords.length === 0) {
+            container.innerHTML = '<p class="no-data">データなし</p>';
+            return;
+        }
+        
+        topWords.forEach(([word, count]) => {
+            const wordDiv = document.createElement('div');
+            wordDiv.className = `word-item ${type}`;
+            wordDiv.innerHTML = `
+                <span class="word-name">${word}</span>
+                <span class="word-count">${count}回</span>
+            `;
+            container.appendChild(wordDiv);
+        });
+    }
+    
+    updateElement(id, value) {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = value;
+        }
+    }
+    
+    exportDifferenceConfig() {
+        const config = this.collectDifferenceConfig();
+        const timestamp = new Date().toISOString().replace(/[-:]/g, '').replace('T', '_').split('.')[0];
+        const filename = `difference_config_${timestamp}.json`;
+        
+        const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        
+        URL.revokeObjectURL(url);
+        this.showToast('差分設定をエクスポートしました', 'success');
+    }
+    
+    resetDifferenceDefaults() {
+        // 基準・比較データをデフォルトに戻す
+        const baseDataset = document.getElementById('baseDataset');
+        const compareDataset = document.getElementById('compareDataset');
+        if (baseDataset) baseDataset.value = 'q2_before';
+        if (compareDataset) compareDataset.value = 'q2_after';
+        
+        // 計算方法をデフォルトに戻す
+        const calculationMethod = document.getElementById('calculationMethod');
+        if (calculationMethod) calculationMethod.value = 'frequency_difference';
+        
+        // 閾値をデフォルトに戻す
+        const minOccurrence = document.getElementById('minOccurrence');
+        const minDifference = document.getElementById('minDifference');
+        if (minOccurrence) minOccurrence.value = '1';
+        if (minDifference) minDifference.value = '0.1';
+        
+        // 科学用語ハイライトをON
+        const scienceHighlight = document.getElementById('scienceHighlight');
+        if (scienceHighlight) scienceHighlight.checked = true;
+        
+        // 除外カテゴリーをデフォルトに戻す
+        const diffExcludeGeneral = document.getElementById('diffExcludeGeneral');
+        const diffExcludeThanks = document.getElementById('diffExcludeThanks');
+        const diffExcludeSchool = document.getElementById('diffExcludeSchool');
+        const diffExcludeExperiment = document.getElementById('diffExcludeExperiment');
+        
+        if (diffExcludeGeneral) diffExcludeGeneral.checked = true;
+        if (diffExcludeThanks) diffExcludeThanks.checked = true;
+        if (diffExcludeSchool) diffExcludeSchool.checked = false;
+        if (diffExcludeExperiment) diffExcludeExperiment.checked = false;
+        
+        // カスタム除外単語をクリア
+        const diffCustomExcludeWords = document.getElementById('diffCustomExcludeWords');
+        if (diffCustomExcludeWords) diffCustomExcludeWords.value = '';
+        
+        // サイズをデフォルトに戻す
+        const diffWidth = document.getElementById('diffWidth');
+        const diffHeight = document.getElementById('diffHeight');
+        if (diffWidth) diffWidth.value = '1200';
+        if (diffHeight) diffHeight.value = '800';
+        
+        // カラーマップをデフォルトに戻す
+        const differenceColormap = document.getElementById('differenceColormap');
+        if (differenceColormap) differenceColormap.value = 'difference_standard';
+        
+        // フォントをデフォルトに戻す
+        const diffFontSelect = document.getElementById('diffFontSelect');
+        if (diffFontSelect) diffFontSelect.value = '';
+        
+        this.showToast('差分設定をリセットしました', 'success');
+    }
 }
 
 // グローバル関数（HTMLから呼び出し可能）
@@ -503,3 +888,10 @@ document.addEventListener('DOMContentLoaded', () => {
         mainContent.id = 'main-content';
     }
 });
+
+// 差分機能のグローバル関数
+function switchMode(mode) {
+    if (window.wordCloudAppV2) {
+        window.wordCloudAppV2.switchMode(mode);
+    }
+}
