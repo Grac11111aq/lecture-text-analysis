@@ -180,3 +180,43 @@ python scripts/analysis/06_statistical_testing.py
 - **Statistical**: Significant vocabulary change (p < 0.05), meaningful effect sizes (d > 0.2)
 - **Educational**: Clear class differentiation, actionable teaching recommendations
 - **Reporting**: Four stakeholder-specific reports completed and validated
+
+## Major Updates (2025-06-01)
+
+### Completed Analysis Implementation
+- **Core Analysis Scripts**: Successfully executed vocabulary and sentiment analysis
+- **Key Findings**: 
+  - Dramatic vocabulary shift: 0% → 42.1% sodium usage (Cohen's d = 1.164)
+  - 0% negative sentiment, high experiment engagement (57.1% flame reaction mentions)
+  - Class 3.0 showed highest educational impact
+- **Final Report**: Generated comprehensive analysis report at `outputs/final_analysis_report.md`
+
+### Japanese Wordcloud Web Application
+- **Purpose**: Interactive tool for real-time wordcloud configuration with Japanese font support
+- **Location**: `wordcloud_app/` directory
+- **Features**:
+  - Real-time parameter adjustment with live preview
+  - 7 Japanese fonts including はんなり明朝
+  - Export/import configuration settings
+  - Responsive design with professional UI
+- **Access**: Run `python wordcloud_app/app.py` and access http://localhost:5000
+
+### Japanese Font Infrastructure
+- **Font Downloader**: `scripts/setup/download_japanese_fonts.py` - Automated font installation
+- **Available Fonts** (7 total):
+  - IPAex Gothic/Mincho, IPA Gothic/Mincho
+  - はんなり明朝 (Hannari Mincho) - Successfully added from official source
+  - Noto Sans JP, Noto Serif JP
+- **Font Directory**: `fonts/` with automatic loading in web app
+- **Note**: こはるいろサンレイ unavailable (distribution site closed)
+
+### Documentation Updates
+- **Wordcloud Algorithm**: Detailed explanation at `docs/wordcloud_algorithm_explanation.md`
+- **Implementation Workflow**: Comprehensive 4-week plan with 67 tasks
+- **Test Scripts**: E2E testing (`wordcloud_app/test_e2e.py`) and font verification
+
+### Technical Improvements
+- **Virtual Environment**: Created to handle externally-managed Python environment
+- **Error Handling**: Robust handling for statistical tests with zero-variance data
+- **Font Path Resolution**: Automatic project-relative path handling
+- **Sample vs Actual Data**: Clear separation for demo and production usage
