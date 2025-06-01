@@ -66,6 +66,171 @@ pip install fugashi unidic-lite plotly kaleido pingouin statsmodels
 
 **Permission Workaround**: Project uses janome as primary tokenizer (pure Python, no system installation required)
 
+## Environment Setup for New Machines
+
+### Complete Setup Guide
+When setting up this project on a new machine, follow these steps in order:
+
+#### 1. Clone Repository
+```bash
+# Clone the repository
+git clone https://github.com/Grac11111aq/lecture-text-analysis.git
+cd lecture-text-analysis
+```
+
+#### 2. Create Python Virtual Environment  
+```bash
+# Create virtual environment (Python 3.8+ required)
+python -m venv venv
+
+# Activate virtual environment
+# Windows:
+venv\Scripts\activate
+# macOS/Linux:
+source venv/bin/activate
+```
+
+#### 3. Install Dependencies
+```bash
+# Install core dependencies
+pip install -r requirements.txt
+
+# Install additional analysis packages
+pip install fugashi unidic-lite plotly kaleido pingouin statsmodels
+```
+
+#### 4. Setup Japanese Fonts
+```bash
+# Create fonts directory if not exists
+mkdir -p fonts
+
+# Download Japanese fonts automatically
+python scripts/setup/download_japanese_fonts.py
+```
+
+#### 5. Create Required Directories
+```bash
+# Create log and output directories
+mkdir -p logs
+mkdir -p outputs/wordcloud_configs
+mkdir -p outputs/wordclouds
+mkdir -p outputs/vocabulary
+mkdir -p outputs/sentiment_results
+mkdir -p outputs/topic_models
+mkdir -p outputs/statistics
+mkdir -p outputs/visualizations
+```
+
+#### 6. Validate Environment
+```bash
+# Run validation script to check setup
+python scripts/setup/validate_environment.py
+```
+
+#### 7. Optional: Install MeCab (System-level)
+```bash
+# Ubuntu/Debian
+sudo apt-get install mecab mecab-ipadic-utf8 mecab-utils
+
+# macOS (requires Homebrew)
+brew install mecab mecab-ipadic
+
+# Windows (more complex, see MeCab documentation)
+```
+
+### Quick Setup Script
+Save this as `setup_new_machine.sh` (Unix/macOS) or `setup_new_machine.bat` (Windows):
+
+**Unix/macOS (`setup_new_machine.sh`):**
+```bash
+#!/bin/bash
+echo "🚀 Setting up lecture-text-analysis environment..."
+
+# Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install all dependencies
+pip install -r requirements.txt
+pip install fugashi unidic-lite plotly kaleido pingouin statsmodels
+
+# Create required directories
+mkdir -p fonts logs
+mkdir -p outputs/{wordcloud_configs,wordclouds,vocabulary,sentiment_results,topic_models,statistics,visualizations}
+
+# Download Japanese fonts
+python scripts/setup/download_japanese_fonts.py
+
+# Validate environment
+python scripts/setup/validate_environment.py
+
+echo "✅ Setup complete! Run 'source venv/bin/activate' to activate the environment."
+```
+
+**Windows (`setup_new_machine.bat`):**
+```batch
+@echo off
+echo 🚀 Setting up lecture-text-analysis environment...
+
+REM Create and activate virtual environment
+python -m venv venv
+call venv\Scripts\activate
+
+REM Install all dependencies
+pip install -r requirements.txt
+pip install fugashi unidic-lite plotly kaleido pingouin statsmodels
+
+REM Create required directories
+mkdir fonts logs 2>nul
+mkdir outputs\wordcloud_configs 2>nul
+mkdir outputs\wordclouds 2>nul
+mkdir outputs\vocabulary 2>nul
+mkdir outputs\sentiment_results 2>nul
+mkdir outputs\topic_models 2>nul
+mkdir outputs\statistics 2>nul
+mkdir outputs\visualizations 2>nul
+
+REM Download Japanese fonts
+python scripts\setup\download_japanese_fonts.py
+
+REM Validate environment
+python scripts\setup\validate_environment.py
+
+echo ✅ Setup complete! Run 'venv\Scripts\activate' to activate the environment.
+```
+
+### Troubleshooting Common Issues
+
+#### Python Version Error
+- Ensure Python 3.8 or higher is installed: `python --version`
+- On some systems, use `python3` instead of `python`
+
+#### pip Installation Failures
+```bash
+# Upgrade pip first
+python -m pip install --upgrade pip
+
+# If SSL errors occur
+pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org <package_name>
+```
+
+#### Japanese Font Issues
+- If font download fails, manually download from:
+  - IPA Fonts: https://moji.or.jp/ipafont/
+  - Noto Fonts: https://fonts.google.com/noto
+
+#### Permission Errors
+- Use `sudo` (Unix/macOS) or run as Administrator (Windows) for system packages
+- Ensure write permissions in project directory
+
+### Verification Checklist
+After setup, verify these components work:
+- [ ] Virtual environment activates without errors
+- [ ] `python scripts/setup/validate_environment.py` passes all checks
+- [ ] `python wordcloud_app/app_v2.py` starts the web application
+- [ ] Fonts directory contains at least 4 Japanese fonts
+- [ ] All output directories are created
+
 ## Analysis Framework
 
 ### Educational Context
