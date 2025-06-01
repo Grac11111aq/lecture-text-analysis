@@ -6,6 +6,11 @@
     <title>東京高専 出前授業分析 Ver.2 - 単語除外テスト版</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/style_v2.css') }}" rel="stylesheet">
+    <!-- D3.js for Word Tree -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- vis.js for Co-occurrence Network -->
+    <link href="https://unpkg.com/vis-network@latest/dist/dist/vis-network.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/vis-network@latest/dist/vis-network.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -29,6 +34,14 @@
             <button class="tab-button" role="tab" aria-selected="false" aria-controls="difference-panel" 
                     id="difference-tab" onclick="switchMode('difference')">
                 <i class="fas fa-balance-scale"></i> 差分ワードクラウド
+            </button>
+            <button class="tab-button" role="tab" aria-selected="false" aria-controls="wordtree-panel" 
+                    id="wordtree-tab" onclick="switchMode('wordtree')">
+                <i class="fas fa-tree"></i> Word Tree
+            </button>
+            <button class="tab-button" role="tab" aria-selected="false" aria-controls="cooccurrence-panel" 
+                    id="cooccurrence-tab" onclick="switchMode('cooccurrence')">
+                <i class="fas fa-project-diagram"></i> 共起ネットワーク
             </button>
         </nav>
 
@@ -450,6 +463,14 @@
                         <img id="wordcloudImg" alt="生成されたワードクラウド">
                     </div>
                     
+                    <div id="wordTreeContainer" class="visualization-container" style="display: none;">
+                        <!-- D3.jsでWord Treeを描画 -->
+                    </div>
+                    
+                    <div id="cooccurrenceContainer" class="visualization-container" style="display: none;">
+                        <!-- vis.jsで共起ネットワークを描画 -->
+                    </div>
+                    
                     <div id="welcomeMessage" class="welcome-message">
                         <i class="fas fa-filter fa-3x"></i>
                         <h3>単語除外テスト版</h3>
@@ -560,6 +581,226 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Word Treeパネル -->
+            <div id="wordtree-panel" class="settings-panel mode-panel" role="tabpanel" aria-labelledby="wordtree-tab" style="display: none;">
+                <div class="panel-header">
+                    <h2><i class="fas fa-tree"></i> Word Tree設定</h2>
+                    <p>特定の単語から始まる文脈を階層的に可視化します</p>
+                </div>
+
+                <!-- データソース選択（共通） -->
+                <div class="setting-group">
+                    <h3><i class="fas fa-database"></i> データソース</h3>
+                    
+                    <div class="form-group">
+                        <label for="wordtreeTextSource">分析対象:</label>
+                        <select id="wordtreeTextSource" class="form-control" aria-label="Word Tree用データソース">
+                            <option value="all_responses">全回答（統合）</option>
+                            <option value="comments">感想文のみ</option>
+                            <option value="q2_before">授業前（なぜしょっぱい？）</option>
+                            <option value="q2_after">授業後（なぜしょっぱい？）</option>
+                            <option value="custom">カスタム</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="wordtreeCustomTextGroup" style="display: none;">
+                        <label for="wordtreeCustomText">カスタムテキスト:</label>
+                        <textarea id="wordtreeCustomText" class="form-control" rows="4" 
+                                  placeholder="分析するテキストを入力..."
+                                  aria-label="Word Tree用カスタムテキスト"></textarea>
+                    </div>
+                </div>
+
+                <!-- ルート語選択 -->
+                <div class="setting-group">
+                    <h3><i class="fas fa-anchor"></i> ルート語設定</h3>
+                    
+                    <div class="form-group">
+                        <label for="wordtreeAutoRoots">
+                            <input type="checkbox" id="wordtreeAutoRoots" checked aria-label="推奨ルート語を自動選択">
+                            推奨ルート語を自動選択
+                        </label>
+                    </div>
+
+                    <div id="recommendedRootsInfo" class="info-box">
+                        <h4>推奨ルート語カテゴリー:</h4>
+                        <div class="root-categories">
+                            <div class="root-category">
+                                <strong>科学用語:</strong> 塩、ナトリウム、塩化ナトリウム
+                            </div>
+                            <div class="root-category">
+                                <strong>実験関連:</strong> 炎色反応、結晶、実験
+                            </div>
+                            <div class="root-category">
+                                <strong>感情表現:</strong> 楽しかった、わかった、面白い、すごい
+                            </div>
+                            <div class="root-category">
+                                <strong>行動動詞:</strong> 見る、観察、やる、知る
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="customRootsGroup" style="display: none;">
+                        <label for="wordtreeCustomRoots">カスタムルート語 (カンマ区切り):</label>
+                        <input type="text" id="wordtreeCustomRoots" class="form-control" 
+                               placeholder="例: 塩, 実験, 楽しい"
+                               aria-label="カスタムルート語">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="wordtreeMaxRoots">最大ルート語数:</label>
+                            <input type="number" id="wordtreeMaxRoots" class="form-control" 
+                                   min="1" max="5" value="3"
+                                   aria-label="最大ルート語数">
+                        </div>
+                        <div class="form-group half">
+                            <label for="wordtreeDepth">ツリーの深さ:</label>
+                            <input type="number" id="wordtreeDepth" class="form-control" 
+                                   min="1" max="5" value="3"
+                                   aria-label="ツリーの深さ">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 単語除外設定（共通） -->
+                <div class="setting-group">
+                    <h3><i class="fas fa-filter"></i> 単語除外設定</h3>
+                    
+                    <div class="exclude-categories" id="wordtreeExcludeCategories">
+                        <!-- JavaScriptで動的に生成 -->
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="wordtreeCustomExclude">カスタム除外単語 (カンマ区切り):</label>
+                        <input type="text" id="wordtreeCustomExclude" class="form-control" 
+                               placeholder="例: です, ます, こと"
+                               aria-label="Word Tree用カスタム除外単語">
+                    </div>
+                </div>
+
+                <!-- アクションボタン -->
+                <div class="action-buttons">
+                    <button id="wordtreeGenerateBtn" class="btn btn-primary btn-large" 
+                            aria-label="Word Treeを生成">
+                        <i class="fas fa-tree"></i> Word Tree生成
+                    </button>
+                    <button id="wordtreeResetBtn" class="btn btn-outline"
+                            aria-label="Word Tree設定をリセット">
+                        <i class="fas fa-refresh"></i> リセット
+                    </button>
+                </div>
+            </div>
+
+            <!-- 共起ネットワークパネル -->
+            <div id="cooccurrence-panel" class="settings-panel mode-panel" role="tabpanel" aria-labelledby="cooccurrence-tab" style="display: none;">
+                <div class="panel-header">
+                    <h2><i class="fas fa-project-diagram"></i> 共起ネットワーク設定</h2>
+                    <p>単語間の共起関係をネットワーク図で可視化します</p>
+                </div>
+
+                <!-- データソース選択（共通） -->
+                <div class="setting-group">
+                    <h3><i class="fas fa-database"></i> データソース</h3>
+                    
+                    <div class="form-group">
+                        <label for="coocTextSource">分析対象:</label>
+                        <select id="coocTextSource" class="form-control" aria-label="共起ネットワーク用データソース">
+                            <option value="all_responses">全回答（統合）</option>
+                            <option value="comments">感想文のみ</option>
+                            <option value="q2_before">授業前（なぜしょっぱい？）</option>
+                            <option value="q2_after">授業後（なぜしょっぱい？）</option>
+                            <option value="custom">カスタム</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="coocCustomTextGroup" style="display: none;">
+                        <label for="coocCustomText">カスタムテキスト:</label>
+                        <textarea id="coocCustomText" class="form-control" rows="4" 
+                                  placeholder="分析するテキストを入力..."
+                                  aria-label="共起ネットワーク用カスタムテキスト"></textarea>
+                    </div>
+                </div>
+
+                <!-- 共起設定 -->
+                <div class="setting-group">
+                    <h3><i class="fas fa-cogs"></i> 共起分析設定</h3>
+                    
+                    <div class="form-group">
+                        <label for="coocWindowSize">共起ウィンドウサイズ:</label>
+                        <div class="slider-container">
+                            <input type="range" id="coocWindowSize" class="form-range" 
+                                   min="0" max="10" value="0"
+                                   aria-label="共起ウィンドウサイズ">
+                            <span id="coocWindowSizeValue" class="slider-value">文内共起</span>
+                        </div>
+                        <small class="form-text">0: 文内共起 / 1-10: 前後N語での共起</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="coocAssociationMethod">関連度計算方法:</label>
+                        <select id="coocAssociationMethod" class="form-control" aria-label="関連度計算方法">
+                            <option value="pmi">PMI (相互情報量)</option>
+                            <option value="jaccard">Jaccard係数</option>
+                            <option value="frequency">共起頻度</option>
+                        </select>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="coocMinEdgeWeight">最小エッジ重み:</label>
+                            <input type="number" id="coocMinEdgeWeight" class="form-control" 
+                                   min="1" max="10" value="2"
+                                   aria-label="最小エッジ重み">
+                        </div>
+                        <div class="form-group half">
+                            <label for="coocMinNodeFreq">最小ノード頻度:</label>
+                            <input type="number" id="coocMinNodeFreq" class="form-control" 
+                                   min="1" max="10" value="3"
+                                   aria-label="最小ノード頻度">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="coocMaxNodes">最大ノード数:</label>
+                        <div class="slider-container">
+                            <input type="range" id="coocMaxNodes" class="form-range" 
+                                   min="10" max="100" value="50" step="10"
+                                   aria-label="最大ノード数">
+                            <span id="coocMaxNodesValue" class="slider-value">50</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 単語除外設定（共通） -->
+                <div class="setting-group">
+                    <h3><i class="fas fa-filter"></i> 単語除外設定</h3>
+                    
+                    <div class="exclude-categories" id="coocExcludeCategories">
+                        <!-- JavaScriptで動的に生成 -->
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="coocCustomExclude">カスタム除外単語 (カンマ区切り):</label>
+                        <input type="text" id="coocCustomExclude" class="form-control" 
+                               placeholder="例: です, ます, こと"
+                               aria-label="共起ネットワーク用カスタム除外単語">
+                    </div>
+                </div>
+
+                <!-- アクションボタン -->
+                <div class="action-buttons">
+                    <button id="coocGenerateBtn" class="btn btn-primary btn-large" 
+                            aria-label="共起ネットワークを生成">
+                        <i class="fas fa-project-diagram"></i> ネットワーク生成
+                    </button>
+                    <button id="coocResetBtn" class="btn btn-outline"
+                            aria-label="共起ネットワーク設定をリセット">
+                        <i class="fas fa-refresh"></i> リセット
+                    </button>
                 </div>
             </div>
         </div>

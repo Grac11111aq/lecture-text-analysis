@@ -30,6 +30,9 @@ from matplotlib.colors import ListedColormap
 from collections import Counter
 from scipy import stats
 import math
+import networkx as nx
+from collections import defaultdict
+from itertools import combinations
 
 # プロジェクトルートをパスに追加
 current_dir = Path(__file__).parent
@@ -408,6 +411,427 @@ class DifferenceWordCloudGenerator:
             logger.error(f"差分ワードクラウド生成エラー: {e}")
             return None, f"生成エラー: {str(e)}", {}
 
+
+class WordTreeGenerator:
+    """Word Tree生成クラス（D3.js用データ準備）"""
+    
+    def __init__(self, base_generator):
+        """ベースジェネレータから機能を継承"""
+        self.base_generator = base_generator
+        self.tokenizer = base_generator.tokenizer
+        
+        # 推奨ルート語（科学教育テーマ）
+        self.recommended_roots = {
+            'science': ['塩', 'ナトリウム', '塩化ナトリウム'],
+            'experiment': ['炎色反応', '結晶', '実験'],
+            'emotion': ['楽しかった', 'わかった', '面白い', 'すごい'],
+            'action': ['見る', '観察', 'やる', '知る']
+        }
+    
+    def tokenize_sentences(self, text):
+        """テキストを文単位に分割"""
+        # 句点で分割（。！？で区切る）
+        import re
+        sentences = re.split(r'[。！？]+', text)
+        return [s.strip() for s in sentences if s.strip()]
+    
+    def extract_word_contexts(self, text, root_word, excluded_words=None):
+        """ルート語の文脈を抽出"""
+        sentences = self.tokenize_sentences(text)
+        contexts = []
+        
+        for sentence in sentences:
+            if root_word in sentence:
+                # 文を単語に分割（除外語を適用）
+                tokenized = self.base_generator.tokenize_japanese(sentence, excluded_words)
+                words = tokenized.split()
+                
+                # ルート語の位置を見つけて文脈を抽出
+                if root_word in words:
+                    root_index = words.index(root_word)
+                    
+                    # 前後の文脈を取得
+                    context = {
+                        'sentence': sentence,
+                        'words': words,
+                        'root_index': root_index,
+                        'before': words[:root_index],
+                        'after': words[root_index + 1:]
+                    }
+                    contexts.append(context)
+        
+        return contexts
+    
+    def build_tree_structure(self, contexts, root_word, depth=3):
+        """Word Tree用の階層構造を構築"""
+        tree = {
+            'word': root_word,
+            'count': len(contexts),
+            'children': defaultdict(lambda: {'count': 0, 'children': defaultdict(dict)})
+        }
+        
+        for context in contexts:
+            # 後続語の階層構造を構築
+            after_words = context['after']
+            current_level = tree['children']
+            
+            for i, word in enumerate(after_words[:depth]):
+                if word not in current_level:
+                    current_level[word] = {
+                        'word': word,
+                        'count': 0,
+                        'children': defaultdict(dict) if i < depth - 1 else {}
+                    }
+                current_level[word]['count'] += 1
+                current_level = current_level[word]['children'] if 'children' in current_level[word] else {}
+        
+        # defaultdictを通常のdictに変換
+        def convert_to_dict(node):
+            if isinstance(node, defaultdict):
+                node = dict(node)
+            if 'children' in node and node['children']:
+                node['children'] = [convert_to_dict(child) for child in node['children'].values()]
+            else:
+                node['children'] = []
+            return node
+        
+        tree['children'] = [convert_to_dict(child) for child in tree['children'].values()]
+        
+        return tree
+    
+    def generate_word_tree_data(self, config):
+        """Word Tree用データ生成"""
+        try:
+            # データソース取得
+            text_key = config.get('text_source', 'all_responses')
+            if text_key == 'custom':
+                text = config.get('custom_text', '')
+            else:
+                text = self.base_generator.sample_texts.get(text_key, {}).get('text', '')
+            
+            if not text.strip():
+                return None, "テキストが空です", {}
+            
+            # 除外単語設定
+            excluded_words = set()
+            if config.get('exclude_categories'):
+                for category in config.get('exclude_categories', []):
+                    if category in self.base_generator.category_stop_words:
+                        excluded_words.update(self.base_generator.category_stop_words[category])
+            
+            if config.get('custom_exclude_words'):
+                custom_words = [w.strip() for w in config.get('custom_exclude_words', '').split(',') if w.strip()]
+                excluded_words.update(custom_words)
+            
+            # ルート語選択（自動または手動）
+            root_words = []
+            if config.get('auto_select_roots', True):
+                # 推奨ルート語から自動選択
+                for category_words in self.recommended_roots.values():
+                    for word in category_words:
+                        if word in text:
+                            root_words.append(word)
+                            if len(root_words) >= config.get('max_roots', 3):
+                                break
+                    if len(root_words) >= config.get('max_roots', 3):
+                        break
+            else:
+                # ユーザー指定のルート語
+                custom_roots = config.get('custom_roots', '')
+                if custom_roots:
+                    root_words = [w.strip() for w in custom_roots.split(',') if w.strip()]
+            
+            if not root_words:
+                return None, "ルート語が見つかりません", {}
+            
+            # 各ルート語についてツリー構造を生成
+            trees = []
+            for root_word in root_words[:config.get('max_roots', 3)]:
+                contexts = self.extract_word_contexts(text, root_word, excluded_words)
+                if contexts:
+                    tree = self.build_tree_structure(
+                        contexts, 
+                        root_word, 
+                        depth=config.get('tree_depth', 3)
+                    )
+                    trees.append(tree)
+            
+            # 統計情報
+            statistics = {
+                'root_words': root_words,
+                'total_contexts': sum(tree['count'] for tree in trees),
+                'trees': len(trees)
+            }
+            
+            return trees, None, statistics
+            
+        except Exception as e:
+            logger.error(f"Word Tree生成エラー: {e}")
+            return None, f"生成エラー: {str(e)}", {}
+
+
+class CooccurrenceNetworkGenerator:
+    """共起ネットワーク生成クラス"""
+    
+    def __init__(self, base_generator):
+        """ベースジェネレータから機能を継承"""
+        self.base_generator = base_generator
+        self.tokenizer = base_generator.tokenizer
+        
+        # ネットワーク可視化設定
+        self.network_colors = {
+            'node': {
+                'default': self.base_generator.ACCESSIBLE_COLORS['blue'],
+                'important': self.base_generator.ACCESSIBLE_COLORS['orange'],
+                'science': self.base_generator.ACCESSIBLE_COLORS['brown']
+            },
+            'edge': {
+                'weak': '#cccccc',
+                'medium': '#888888',
+                'strong': '#444444'
+            }
+        }
+    
+    def calculate_cooccurrence(self, text, window_size=None, excluded_words=None):
+        """共起頻度を計算"""
+        # 文単位での共起（デフォルト）
+        sentences = self._tokenize_sentences(text)
+        cooccurrence = defaultdict(int)
+        word_freq = defaultdict(int)
+        
+        for sentence in sentences:
+            # 単語に分割（除外語を適用）
+            tokenized = self.base_generator.tokenize_japanese(sentence, excluded_words)
+            words = tokenized.split()
+            
+            # 単語頻度カウント
+            for word in words:
+                word_freq[word] += 1
+            
+            if window_size is None:
+                # 文内共起
+                for word1, word2 in combinations(set(words), 2):
+                    if word1 != word2:
+                        # アルファベット順でペアを正規化
+                        pair = tuple(sorted([word1, word2]))
+                        cooccurrence[pair] += 1
+            else:
+                # ウィンドウサイズ指定
+                for i, word1 in enumerate(words):
+                    for j in range(max(0, i - window_size), min(len(words), i + window_size + 1)):
+                        if i != j:
+                            word2 = words[j]
+                            if word1 != word2:
+                                pair = tuple(sorted([word1, word2]))
+                                cooccurrence[pair] += 1
+        
+        return cooccurrence, word_freq
+    
+    def _tokenize_sentences(self, text):
+        """テキストを文単位に分割"""
+        import re
+        sentences = re.split(r'[。！？]+', text)
+        return [s.strip() for s in sentences if s.strip()]
+    
+    def calculate_association_strength(self, cooccurrence, word_freq, method='pmi'):
+        """共起の強さを計算（PMI、Jaccard係数など）"""
+        total_words = sum(word_freq.values())
+        associations = {}
+        
+        for (word1, word2), cooc_count in cooccurrence.items():
+            if cooc_count == 0:
+                continue
+            
+            freq1 = word_freq[word1]
+            freq2 = word_freq[word2]
+            
+            if method == 'pmi':
+                # Pointwise Mutual Information
+                p_word1 = freq1 / total_words
+                p_word2 = freq2 / total_words
+                p_cooc = cooc_count / total_words
+                
+                if p_cooc > 0:
+                    pmi = math.log(p_cooc / (p_word1 * p_word2))
+                    associations[(word1, word2)] = {
+                        'score': pmi,
+                        'count': cooc_count
+                    }
+            
+            elif method == 'jaccard':
+                # Jaccard係数
+                union = freq1 + freq2 - cooc_count
+                if union > 0:
+                    jaccard = cooc_count / union
+                    associations[(word1, word2)] = {
+                        'score': jaccard,
+                        'count': cooc_count
+                    }
+            
+            else:  # 'frequency'
+                # 単純な共起頻度
+                associations[(word1, word2)] = {
+                    'score': cooc_count,
+                    'count': cooc_count
+                }
+        
+        return associations
+    
+    def build_network(self, associations, word_freq, config):
+        """NetworkXグラフオブジェクトを構築"""
+        G = nx.Graph()
+        
+        # 閾値設定
+        min_edge_weight = config.get('min_edge_weight', 2)
+        min_node_freq = config.get('min_node_freq', 3)
+        max_nodes = config.get('max_nodes', 50)
+        
+        # ノードの追加（頻度でフィルタリング）
+        sorted_words = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)
+        selected_words = set()
+        
+        for word, freq in sorted_words[:max_nodes]:
+            if freq >= min_node_freq:
+                selected_words.add(word)
+                G.add_node(word, frequency=freq)
+        
+        # エッジの追加（関連度でフィルタリング）
+        for (word1, word2), data in associations.items():
+            if (word1 in selected_words and word2 in selected_words and 
+                data['count'] >= min_edge_weight):
+                G.add_edge(word1, word2, weight=data['score'], count=data['count'])
+        
+        # 孤立ノードを削除
+        isolated_nodes = list(nx.isolates(G))
+        G.remove_nodes_from(isolated_nodes)
+        
+        return G
+    
+    def prepare_vis_data(self, G, word_freq):
+        """vis.js用のデータ形式に変換"""
+        # ノードデータ
+        nodes = []
+        max_freq = max(word_freq.values()) if word_freq else 1
+        
+        for node in G.nodes():
+            freq = G.nodes[node]['frequency']
+            # サイズは頻度に基づく（10-50の範囲）
+            size = 10 + (freq / max_freq) * 40
+            
+            # 科学用語判定
+            is_science = any(node in terms for terms in [
+                ['塩', '食塩', '塩分'],
+                ['ナトリウム', '塩化ナトリウム'],
+                ['Na', 'NaCl', 'イオン', 'Na+']
+            ])
+            
+            # 重要語判定（頻度上位10%）
+            is_important = freq >= max_freq * 0.9
+            
+            # 色設定
+            if is_science:
+                color = self.network_colors['node']['science']
+            elif is_important:
+                color = self.network_colors['node']['important']
+            else:
+                color = self.network_colors['node']['default']
+            
+            nodes.append({
+                'id': node,
+                'label': node,
+                'value': size,
+                'color': color,
+                'font': {
+                    'size': max(12, size / 3),
+                    'color': '#000000'
+                }
+            })
+        
+        # エッジデータ
+        edges = []
+        edge_weights = [G[u][v]['weight'] for u, v in G.edges()]
+        max_weight = max(edge_weights) if edge_weights else 1
+        min_weight = min(edge_weights) if edge_weights else 0
+        
+        for edge in G.edges(data=True):
+            weight = edge[2]['weight']
+            count = edge[2]['count']
+            
+            # エッジの太さ（1-5の範囲）
+            normalized_weight = (weight - min_weight) / (max_weight - min_weight) if max_weight > min_weight else 0.5
+            width = 1 + normalized_weight * 4
+            
+            # エッジの色（強度に基づく）
+            if normalized_weight > 0.7:
+                color = self.network_colors['edge']['strong']
+            elif normalized_weight > 0.3:
+                color = self.network_colors['edge']['medium']
+            else:
+                color = self.network_colors['edge']['weak']
+            
+            edges.append({
+                'from': edge[0],
+                'to': edge[1],
+                'value': width,
+                'color': color,
+                'title': f'共起回数: {count}'
+            })
+        
+        return {'nodes': nodes, 'edges': edges}
+    
+    def generate_cooccurrence_network_data(self, config):
+        """共起ネットワーク用データ生成"""
+        try:
+            # データソース取得
+            text_key = config.get('text_source', 'all_responses')
+            if text_key == 'custom':
+                text = config.get('custom_text', '')
+            else:
+                text = self.base_generator.sample_texts.get(text_key, {}).get('text', '')
+            
+            if not text.strip():
+                return None, "テキストが空です", {}
+            
+            # 除外単語設定
+            excluded_words = set()
+            if config.get('exclude_categories'):
+                for category in config.get('exclude_categories', []):
+                    if category in self.base_generator.category_stop_words:
+                        excluded_words.update(self.base_generator.category_stop_words[category])
+            
+            if config.get('custom_exclude_words'):
+                custom_words = [w.strip() for w in config.get('custom_exclude_words', '').split(',') if w.strip()]
+                excluded_words.update(custom_words)
+            
+            # 共起計算
+            window_size = config.get('window_size', None)  # Noneの場合は文内共起
+            cooccurrence, word_freq = self.calculate_cooccurrence(text, window_size, excluded_words)
+            
+            # 関連度計算
+            method = config.get('association_method', 'pmi')
+            associations = self.calculate_association_strength(cooccurrence, word_freq, method)
+            
+            # ネットワーク構築
+            G = self.build_network(associations, word_freq, config)
+            
+            # vis.js用データ変換
+            vis_data = self.prepare_vis_data(G, word_freq)
+            
+            # 統計情報
+            statistics = {
+                'total_nodes': G.number_of_nodes(),
+                'total_edges': G.number_of_edges(),
+                'density': nx.density(G) if G.number_of_nodes() > 0 else 0,
+                'components': nx.number_connected_components(G),
+                'average_degree': sum(dict(G.degree()).values()) / G.number_of_nodes() if G.number_of_nodes() > 0 else 0
+            }
+            
+            return vis_data, None, statistics
+            
+        except Exception as e:
+            logger.error(f"共起ネットワーク生成エラー: {e}")
+            return None, f"生成エラー: {str(e)}", {}
+
 class WordCloudGeneratorV2:
     """ワードクラウド生成クラス Ver.2 - 固定パラメータ版"""
     
@@ -691,6 +1115,8 @@ class WordCloudGeneratorV2:
 # グローバルインスタンス
 generator = WordCloudGeneratorV2()
 difference_generator = DifferenceWordCloudGenerator(generator)
+word_tree_generator = WordTreeGenerator(generator)
+cooccurrence_generator = CooccurrenceNetworkGenerator(generator)
 
 @app.route('/')
 def index():
@@ -865,6 +1291,73 @@ def get_science_terms():
     return jsonify({
         'science_terms': difference_generator.science_terms
     })
+
+@app.route('/api/word-tree-generate', methods=['POST'])
+def generate_word_tree():
+    """Word Tree生成API"""
+    try:
+        config = request.json
+        
+        trees, error, statistics = word_tree_generator.generate_word_tree_data(config)
+        
+        if error:
+            return jsonify({
+                'success': False,
+                'error': error,
+                'statistics': statistics
+            }), 400
+        
+        return jsonify({
+            'success': True,
+            'trees': trees,
+            'statistics': statistics,
+            'type': 'word_tree'
+        })
+        
+    except Exception as e:
+        logger.error(f"Word Tree API エラー: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'statistics': {}
+        }), 500
+
+@app.route('/api/recommended-roots')
+def get_recommended_roots():
+    """推奨ルート語取得"""
+    return jsonify({
+        'recommended_roots': word_tree_generator.recommended_roots
+    })
+
+@app.route('/api/cooccurrence-generate', methods=['POST'])
+def generate_cooccurrence_network():
+    """共起ネットワーク生成API"""
+    try:
+        config = request.json
+        
+        network_data, error, statistics = cooccurrence_generator.generate_cooccurrence_network_data(config)
+        
+        if error:
+            return jsonify({
+                'success': False,
+                'error': error,
+                'statistics': statistics
+            }), 400
+        
+        return jsonify({
+            'success': True,
+            'network': network_data,
+            'statistics': statistics,
+            'type': 'cooccurrence_network'
+        })
+        
+    except Exception as e:
+        logger.error(f"共起ネットワーク API エラー: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'statistics': {}
+        }), 500
 
 if __name__ == '__main__':
     # ログディレクトリ確保

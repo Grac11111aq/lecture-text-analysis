@@ -11,10 +11,18 @@ class WordCloudAppV2 {
         this.generateTimeout = null;
         
         // 差分機能関連
-        this.currentMode = 'standard'; // 'standard' or 'difference'
+        this.currentMode = 'standard'; // 'standard', 'difference', 'wordtree', 'cooccurrence'
         this.differenceColormaps = {};
         this.scienceTerms = {};
         this.lastStatistics = {};
+        
+        // Word Tree関連
+        this.recommendedRoots = {};
+        this.wordTreeData = null;
+        
+        // 共起ネットワーク関連
+        this.cooccurrenceData = null;
+        this.networkInstance = null;
         
         this.init();
     }
@@ -34,13 +42,14 @@ class WordCloudAppV2 {
     async loadInitialData() {
         try {
             // 並列でデータ読み込み（差分機能データも含む）
-            const [fontsData, textsData, fixedParamsData, stopWordsData, diffColormapsData, scienceTermsData] = await Promise.all([
+            const [fontsData, textsData, fixedParamsData, stopWordsData, diffColormapsData, scienceTermsData, recommendedRootsData] = await Promise.all([
                 fetch('/api/fonts').then(r => r.json()),
                 fetch('/api/sample-texts').then(r => r.json()),
                 fetch('/api/fixed-params').then(r => r.json()),
                 fetch('/api/stop-words').then(r => r.json()),
                 fetch('/api/difference-colormaps').then(r => r.json()),
-                fetch('/api/science-terms').then(r => r.json())
+                fetch('/api/science-terms').then(r => r.json()),
+                fetch('/api/recommended-roots').then(r => r.json())
             ]);
             
             this.fonts = fontsData.fonts;
@@ -50,9 +59,12 @@ class WordCloudAppV2 {
             this.stopWordCategories = stopWordsData.categories;
             this.differenceColormaps = diffColormapsData.colormaps;
             this.scienceTerms = scienceTermsData.science_terms;
+            this.recommendedRoots = recommendedRootsData.recommended_roots;
             
             this.populateSelects();
             this.populateDifferenceSelects();
+            this.populateWordTreeSelects();
+            this.populateCooccurrenceSelects();
             
         } catch (error) {
             console.error('初期データ読み込みエラー:', error);
@@ -177,6 +189,34 @@ class WordCloudAppV2 {
                 this.resetDifferenceDefaults();
             });
         }
+        
+        // Word Tree関連イベント
+        document.getElementById('wordtreeTextSource')?.addEventListener('change', (e) => {
+            document.getElementById('wordtreeCustomTextGroup').style.display = 
+                e.target.value === 'custom' ? 'block' : 'none';
+        });
+        
+        document.getElementById('wordtreeGenerateBtn')?.addEventListener('click', () => {
+            this.generateWordTree();
+        });
+        
+        document.getElementById('wordtreeResetBtn')?.addEventListener('click', () => {
+            this.resetWordTreeDefaults();
+        });
+        
+        // 共起ネットワーク関連イベント
+        document.getElementById('coocTextSource')?.addEventListener('change', (e) => {
+            document.getElementById('coocCustomTextGroup').style.display = 
+                e.target.value === 'custom' ? 'block' : 'none';
+        });
+        
+        document.getElementById('coocGenerateBtn')?.addEventListener('click', () => {
+            this.generateCooccurrenceNetwork();
+        });
+        
+        document.getElementById('coocResetBtn')?.addEventListener('click', () => {
+            this.resetCooccurrenceDefaults();
+        });
     }
     
     setupAccessibility() {
@@ -861,6 +901,487 @@ class WordCloudAppV2 {
         if (diffFontSelect) diffFontSelect.value = '';
         
         this.showToast('差分設定をリセットしました', 'success');
+    }
+    
+    // モード切り替え
+    switchMode(mode) {
+        this.currentMode = mode;
+        
+        // すべてのタブボタンとパネルを取得
+        const tabs = document.querySelectorAll('.tab-button');
+        const panels = document.querySelectorAll('.mode-panel');
+        
+        // タブとパネルの表示を更新
+        tabs.forEach(tab => {
+            const tabMode = tab.id.replace('-tab', '');
+            if (tabMode === mode) {
+                tab.classList.add('active');
+                tab.setAttribute('aria-selected', 'true');
+            } else {
+                tab.classList.remove('active');
+                tab.setAttribute('aria-selected', 'false');
+            }
+        });
+        
+        panels.forEach(panel => {
+            const panelMode = panel.id.replace('-panel', '');
+            if (panelMode === mode) {
+                panel.style.display = 'block';
+            } else {
+                panel.style.display = 'none';
+            }
+        });
+        
+        // プレビューコンテナの表示切り替え
+        const previewImage = document.getElementById('previewImage');
+        const wordTreeContainer = document.getElementById('wordTreeContainer');
+        const cooccurrenceContainer = document.getElementById('cooccurrenceContainer');
+        const statisticsInfo = document.getElementById('statisticsInfo');
+        
+        // すべて非表示にしてから、必要なものだけ表示
+        [previewImage, wordTreeContainer, cooccurrenceContainer, statisticsInfo].forEach(el => {
+            if (el) el.style.display = 'none';
+        });
+        
+        // モードに応じた初期表示
+        if (mode === 'wordtree' && this.wordTreeData) {
+            wordTreeContainer.style.display = 'block';
+        } else if (mode === 'cooccurrence' && this.cooccurrenceData) {
+            cooccurrenceContainer.style.display = 'block';
+        } else if ((mode === 'standard' || mode === 'difference') && previewImage.querySelector('img').src) {
+            previewImage.style.display = 'block';
+        }
+    }
+    
+    // Word Tree関連メソッド
+    populateWordTreeSelects() {
+        // 除外カテゴリーチェックボックスを生成
+        this.populateExcludeCategories('wordtreeExcludeCategories');
+        
+        // チェックボックス変更イベント
+        const autoRootsCheckbox = document.getElementById('wordtreeAutoRoots');
+        if (autoRootsCheckbox) {
+            autoRootsCheckbox.addEventListener('change', (e) => {
+                const customRootsGroup = document.getElementById('customRootsGroup');
+                const recommendedRootsInfo = document.getElementById('recommendedRootsInfo');
+                if (e.target.checked) {
+                    customRootsGroup.style.display = 'none';
+                    recommendedRootsInfo.style.display = 'block';
+                } else {
+                    customRootsGroup.style.display = 'block';
+                    recommendedRootsInfo.style.display = 'none';
+                }
+            });
+        }
+    }
+    
+    async generateWordTree() {
+        const config = this.collectWordTreeConfig();
+        
+        this.showLoading();
+        
+        try {
+            const response = await fetch('/api/word-tree-generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.displayWordTree(data.trees, data.statistics);
+                this.showToast('Word Treeを生成しました', 'success');
+            } else {
+                this.showError(data.error || 'Word Tree生成に失敗しました');
+            }
+        } catch (error) {
+            console.error('Word Tree生成エラー:', error);
+            this.showError('Word Tree生成中にエラーが発生しました');
+        } finally {
+            this.hideLoading();
+        }
+    }
+    
+    collectWordTreeConfig() {
+        const config = {
+            text_source: document.getElementById('wordtreeTextSource').value,
+            custom_text: document.getElementById('wordtreeCustomText').value,
+            auto_select_roots: document.getElementById('wordtreeAutoRoots').checked,
+            custom_roots: document.getElementById('wordtreeCustomRoots').value,
+            max_roots: parseInt(document.getElementById('wordtreeMaxRoots').value),
+            tree_depth: parseInt(document.getElementById('wordtreeDepth').value),
+            custom_exclude_words: document.getElementById('wordtreeCustomExclude').value
+        };
+        
+        // 除外カテゴリー収集
+        const excludeCategories = [];
+        document.querySelectorAll('#wordtreeExcludeCategories input[type="checkbox"]:checked').forEach(checkbox => {
+            excludeCategories.push(checkbox.value);
+        });
+        config.exclude_categories = excludeCategories;
+        
+        return config;
+    }
+    
+    displayWordTree(trees, statistics) {
+        const container = document.getElementById('wordTreeContainer');
+        container.innerHTML = '';
+        container.style.display = 'block';
+        
+        // 統計情報表示
+        const statsDiv = document.createElement('div');
+        statsDiv.className = 'network-stats';
+        statsDiv.innerHTML = `
+            <div class="network-stat-item">
+                <span class="network-stat-value">${trees.length}</span>
+                <span class="network-stat-label">ツリー数</span>
+            </div>
+            <div class="network-stat-item">
+                <span class="network-stat-value">${statistics.total_contexts}</span>
+                <span class="network-stat-label">総文脈数</span>
+            </div>
+        `;
+        container.appendChild(statsDiv);
+        
+        // 各Word Treeを描画
+        trees.forEach((treeData, index) => {
+            const treeContainer = document.createElement('div');
+            treeContainer.className = 'word-tree-container';
+            treeContainer.id = `wordTree${index}`;
+            
+            const title = document.createElement('div');
+            title.className = 'word-tree-title';
+            title.textContent = `「${treeData.word}」の文脈 (${treeData.count}回出現)`;
+            treeContainer.appendChild(title);
+            
+            const svgContainer = document.createElement('div');
+            svgContainer.style.width = '100%';
+            svgContainer.style.height = '400px';
+            treeContainer.appendChild(svgContainer);
+            
+            container.appendChild(treeContainer);
+            
+            // D3.jsでWord Treeを描画
+            this.drawWordTree(svgContainer, treeData);
+        });
+        
+        this.wordTreeData = trees;
+    }
+    
+    drawWordTree(container, treeData) {
+        // コンテナのサイズを取得
+        const width = container.offsetWidth;
+        const height = 400;
+        
+        // SVG作成
+        const svg = d3.select(container)
+            .append('svg')
+            .attr('width', width)
+            .attr('height', height);
+        
+        const g = svg.append('g')
+            .attr('transform', 'translate(100, 200)');
+        
+        // 階層レイアウト
+        const tree = d3.tree()
+            .size([height - 100, width - 200]);
+        
+        // 階層データに変換
+        const root = d3.hierarchy(treeData);
+        const treeLayout = tree(root);
+        
+        // リンク描画
+        g.selectAll('.word-tree-link')
+            .data(treeLayout.links())
+            .enter()
+            .append('path')
+            .attr('class', 'word-tree-link')
+            .attr('d', d3.linkHorizontal()
+                .x(d => d.y)
+                .y(d => d.x));
+        
+        // ノード描画
+        const nodes = g.selectAll('.word-tree-node')
+            .data(treeLayout.descendants())
+            .enter()
+            .append('g')
+            .attr('class', d => `word-tree-node ${d.depth === 0 ? 'root' : d.children ? 'internal' : 'leaf'}`)
+            .attr('transform', d => `translate(${d.y}, ${d.x})`);
+        
+        // ノードの円
+        nodes.append('circle')
+            .attr('r', 4)
+            .style('fill', d => d.depth === 0 ? this.accessibleColors.orange : this.accessibleColors.blue);
+        
+        // テキストラベル
+        nodes.append('text')
+            .attr('dx', d => d.children ? -10 : 10)
+            .attr('dy', 3)
+            .style('text-anchor', d => d.children ? 'end' : 'start')
+            .text(d => d.data.word || d.data.name)
+            .style('font-size', d => d.depth === 0 ? '16px' : '14px')
+            .style('font-weight', d => d.depth === 0 ? 'bold' : 'normal');
+        
+        // ツールチップ
+        nodes.append('title')
+            .text(d => `${d.data.word}: ${d.data.count}回`);
+    }
+    
+    // 共起ネットワーク関連メソッド
+    populateCooccurrenceSelects() {
+        // 除外カテゴリーチェックボックスを生成
+        this.populateExcludeCategories('coocExcludeCategories');
+        
+        // スライダーイベント
+        const windowSizeSlider = document.getElementById('coocWindowSize');
+        const windowSizeValue = document.getElementById('coocWindowSizeValue');
+        if (windowSizeSlider && windowSizeValue) {
+            windowSizeSlider.addEventListener('input', (e) => {
+                const value = parseInt(e.target.value);
+                windowSizeValue.textContent = value === 0 ? '文内共起' : `前後${value}語`;
+            });
+        }
+        
+        const maxNodesSlider = document.getElementById('coocMaxNodes');
+        const maxNodesValue = document.getElementById('coocMaxNodesValue');
+        if (maxNodesSlider && maxNodesValue) {
+            maxNodesSlider.addEventListener('input', (e) => {
+                maxNodesValue.textContent = e.target.value;
+            });
+        }
+    }
+    
+    async generateCooccurrenceNetwork() {
+        const config = this.collectCooccurrenceConfig();
+        
+        this.showLoading();
+        
+        try {
+            const response = await fetch('/api/cooccurrence-generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(config)
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                this.displayCooccurrenceNetwork(data.network, data.statistics);
+                this.showToast('共起ネットワークを生成しました', 'success');
+            } else {
+                this.showError(data.error || '共起ネットワーク生成に失敗しました');
+            }
+        } catch (error) {
+            console.error('共起ネットワーク生成エラー:', error);
+            this.showError('共起ネットワーク生成中にエラーが発生しました');
+        } finally {
+            this.hideLoading();
+        }
+    }
+    
+    collectCooccurrenceConfig() {
+        const windowSize = parseInt(document.getElementById('coocWindowSize').value);
+        const config = {
+            text_source: document.getElementById('coocTextSource').value,
+            custom_text: document.getElementById('coocCustomText').value,
+            window_size: windowSize === 0 ? null : windowSize,
+            association_method: document.getElementById('coocAssociationMethod').value,
+            min_edge_weight: parseInt(document.getElementById('coocMinEdgeWeight').value),
+            min_node_freq: parseInt(document.getElementById('coocMinNodeFreq').value),
+            max_nodes: parseInt(document.getElementById('coocMaxNodes').value),
+            custom_exclude_words: document.getElementById('coocCustomExclude').value
+        };
+        
+        // 除外カテゴリー収集
+        const excludeCategories = [];
+        document.querySelectorAll('#coocExcludeCategories input[type="checkbox"]:checked').forEach(checkbox => {
+            excludeCategories.push(checkbox.value);
+        });
+        config.exclude_categories = excludeCategories;
+        
+        return config;
+    }
+    
+    displayCooccurrenceNetwork(networkData, statistics) {
+        const container = document.getElementById('cooccurrenceContainer');
+        container.innerHTML = '';
+        container.style.display = 'block';
+        
+        // 統計情報表示
+        const statsDiv = document.createElement('div');
+        statsDiv.className = 'network-stats';
+        statsDiv.innerHTML = `
+            <div class="network-stat-item">
+                <span class="network-stat-value">${statistics.total_nodes}</span>
+                <span class="network-stat-label">ノード数</span>
+            </div>
+            <div class="network-stat-item">
+                <span class="network-stat-value">${statistics.total_edges}</span>
+                <span class="network-stat-label">エッジ数</span>
+            </div>
+            <div class="network-stat-item">
+                <span class="network-stat-value">${(statistics.density * 100).toFixed(1)}%</span>
+                <span class="network-stat-label">密度</span>
+            </div>
+            <div class="network-stat-item">
+                <span class="network-stat-value">${statistics.average_degree.toFixed(1)}</span>
+                <span class="network-stat-label">平均次数</span>
+            </div>
+        `;
+        container.appendChild(statsDiv);
+        
+        // ネットワーク描画エリア
+        const networkDiv = document.createElement('div');
+        networkDiv.id = 'network-visualization';
+        networkDiv.style.height = '500px';
+        networkDiv.style.border = '1px solid #ddd';
+        networkDiv.style.borderRadius = '8px';
+        networkDiv.style.marginTop = '20px';
+        container.appendChild(networkDiv);
+        
+        // vis.jsでネットワークを描画
+        this.drawCooccurrenceNetwork(networkDiv, networkData);
+        
+        this.cooccurrenceData = networkData;
+    }
+    
+    drawCooccurrenceNetwork(container, data) {
+        // vis.js用のデータセット
+        const nodes = new vis.DataSet(data.nodes);
+        const edges = new vis.DataSet(data.edges);
+        
+        // ネットワークオプション
+        const options = {
+            nodes: {
+                shape: 'dot',
+                scaling: {
+                    min: 10,
+                    max: 50,
+                    label: {
+                        min: 12,
+                        max: 24,
+                        drawThreshold: 8,
+                        maxVisible: 30
+                    }
+                },
+                font: {
+                    face: 'Yu Gothic UI, Meiryo UI, sans-serif',
+                    color: '#333'
+                }
+            },
+            edges: {
+                smooth: {
+                    type: 'continuous'
+                },
+                scaling: {
+                    min: 1,
+                    max: 5
+                }
+            },
+            physics: {
+                forceAtlas2Based: {
+                    gravitationalConstant: -50,
+                    centralGravity: 0.01,
+                    springLength: 100,
+                    springConstant: 0.08
+                },
+                maxVelocity: 50,
+                solver: 'forceAtlas2Based',
+                timestep: 0.35,
+                stabilization: {
+                    iterations: 150
+                }
+            },
+            interaction: {
+                hover: true,
+                tooltipDelay: 200,
+                hideEdgesOnDrag: true
+            }
+        };
+        
+        // ネットワーク作成
+        this.networkInstance = new vis.Network(container, { nodes, edges }, options);
+        
+        // クリックイベント
+        this.networkInstance.on('click', (params) => {
+            if (params.nodes.length > 0) {
+                const nodeId = params.nodes[0];
+                const node = nodes.get(nodeId);
+                console.log('選択ノード:', node);
+            }
+        });
+    }
+    
+    // 共通メソッド
+    populateExcludeCategories(containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        
+        container.innerHTML = '<h4>除外する単語カテゴリー:</h4>';
+        const checkboxContainer = document.createElement('div');
+        checkboxContainer.className = 'category-checkboxes';
+        
+        Object.entries(this.stopWordCategories).forEach(([key, data]) => {
+            const label = document.createElement('label');
+            label.className = 'checkbox-label';
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.value = key;
+            checkbox.checked = key === 'general' || key === 'thanks';
+            
+            const text = document.createElement('span');
+            text.innerHTML = `<strong>${data.name}</strong><br><small>例: ${data.words.slice(0, 3).join(', ')}...</small>`;
+            
+            label.appendChild(checkbox);
+            label.appendChild(text);
+            checkboxContainer.appendChild(label);
+        });
+        
+        container.appendChild(checkboxContainer);
+    }
+    
+    // リセットメソッド
+    resetWordTreeDefaults() {
+        document.getElementById('wordtreeTextSource').value = 'all_responses';
+        document.getElementById('wordtreeCustomText').value = '';
+        document.getElementById('wordtreeAutoRoots').checked = true;
+        document.getElementById('wordtreeCustomRoots').value = '';
+        document.getElementById('wordtreeMaxRoots').value = '3';
+        document.getElementById('wordtreeDepth').value = '3';
+        document.getElementById('wordtreeCustomExclude').value = '';
+        
+        // 除外カテゴリーをデフォルトに
+        document.querySelectorAll('#wordtreeExcludeCategories input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = checkbox.value === 'general' || checkbox.value === 'thanks';
+        });
+        
+        // カスタムルート語グループの表示制御
+        document.getElementById('customRootsGroup').style.display = 'none';
+        document.getElementById('recommendedRootsInfo').style.display = 'block';
+        
+        this.showToast('Word Tree設定をリセットしました', 'success');
+    }
+    
+    resetCooccurrenceDefaults() {
+        document.getElementById('coocTextSource').value = 'all_responses';
+        document.getElementById('coocCustomText').value = '';
+        document.getElementById('coocWindowSize').value = '0';
+        document.getElementById('coocWindowSizeValue').textContent = '文内共起';
+        document.getElementById('coocAssociationMethod').value = 'pmi';
+        document.getElementById('coocMinEdgeWeight').value = '2';
+        document.getElementById('coocMinNodeFreq').value = '3';
+        document.getElementById('coocMaxNodes').value = '50';
+        document.getElementById('coocMaxNodesValue').textContent = '50';
+        document.getElementById('coocCustomExclude').value = '';
+        
+        // 除外カテゴリーをデフォルトに
+        document.querySelectorAll('#coocExcludeCategories input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = checkbox.value === 'general' || checkbox.value === 'thanks';
+        });
+        
+        this.showToast('共起ネットワーク設定をリセットしました', 'success');
     }
 }
 
