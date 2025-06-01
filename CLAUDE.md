@@ -89,11 +89,12 @@ This is an educational impact assessment project measuring:
 
 ### Target Outputs
 - `outputs/vocabulary/` - Vocabulary change analysis with statistical tests
-- `outputs/wordclouds/` - Visual frequency analysis (overall + class-specific)
+- `outputs/wordclouds/` - Visual frequency analysis (overall + class-specific + adaptive optimized)
 - `outputs/sentiment_results/` - Emotional response analysis  
 - `outputs/topic_models/` - Thematic content extraction
 - `outputs/statistics/` - Comprehensive statistical test results
 - `outputs/visualizations/` - Effect size plots, heatmaps, forest plots
+- `outputs/adaptive_analysis_results.json` - Data-driven wordcloud optimization metadata
 
 ## Analysis Standards
 
@@ -141,6 +142,9 @@ python scripts/utils/data_loader.py
 
 # Core vocabulary change analysis (PRIMARY)
 python scripts/analysis/02_vocabulary_analysis.py
+
+# Adaptive wordcloud optimization (NEW)
+python adaptive_wordcloud_optimizer.py
 
 # Additional analyses (to be implemented)
 python scripts/analysis/01_data_exploration.py
@@ -190,6 +194,43 @@ python scripts/analysis/06_statistical_testing.py
   - 0% negative sentiment, high experiment engagement (57.1% flame reaction mentions)
   - Class 3.0 showed highest educational impact
 - **Final Report**: Generated comprehensive analysis report at `outputs/final_analysis_report.md`
+
+### Adaptive Wordcloud Optimization System (2025-06-01)
+- **Problem Solved**: Fixed "sparse display" issue where Ver.2's fixed parameters caused理由説明データ to appear too sparse
+- **Data-Driven Optimization**: Implemented intelligent vocabulary processing with 73.4% noise reduction
+- **Adaptive Parameters**: Automatic dataset type detection and parameter adjustment based on data characteristics
+- **Educational Value Weighting**: Science terms receive 3x weight boost, emotion terms 2x boost for enhanced educational impact
+- **Multi-Strategy Support**: Handles 3 different data densities (comments, reasoning, mixed) with optimized layouts
+
+#### Key Optimization Scripts
+```bash
+# Comprehensive vocabulary analysis and classification
+python debug_vocabulary_enhanced.py
+
+# Basic wordcloud optimization with noise filtering
+python wordcloud_optimizer.py
+
+# Advanced data characteristics analysis
+python adaptive_wordcloud_analyzer.py
+
+# Complete adaptive optimization system
+python adaptive_wordcloud_optimizer.py
+```
+
+#### Performance Improvements
+| Metric | Before | After | Improvement |
+|--------|--------|-------|-------------|
+| **Vocabulary Quality** | 304 words | 208 words | 32% reduction, higher relevance |
+| **Noise Removal** | Manual exclusion | **73.4% automatic** | Data-driven filtering |
+| **Educational Focus** | Equal weights | **Science terms 3x** | Value-based prioritization |
+| **Layout Adaptation** | Fixed parameters | **Auto-adaptive** | Data-responsive design |
+
+#### Generated Outputs
+- `outputs/wordclouds/adaptive_感想文.png` - Multi-vocabulary comprehensive type
+- `outputs/wordclouds/adaptive_授業前reason.png` - Compact focused type (solved sparsity)
+- `outputs/wordclouds/adaptive_授業後reason.png` - Science learning emphasis type  
+- `outputs/wordclouds/adaptive_全データ.png` - Integrated balanced type
+- `outputs/adaptive_analysis_results.json` - Complete analysis metadata
 
 ### Japanese Wordcloud Web Application (Updated: 2025-06-01)
 - **Purpose**: Interactive tool for real-time wordcloud configuration with Japanese font support
@@ -343,3 +384,37 @@ wordcloud_app/
 - **Data Consistency**: Both use the same processed dataset (`data/processed/all_text_corpus.csv`)
 - **Configuration Export**: Ver.2 includes version metadata in exported configurations
 - **Log Separation**: Independent logging for debugging and monitoring
+
+## Advanced Wordcloud Optimization (2025-06-01)
+
+### Intelligent Vocabulary Processing System
+The project implements a sophisticated vocabulary optimization system that addresses the core limitation of static parameter approaches used in basic web interfaces.
+
+#### Problem Analysis
+- **Fixed Parameter Issue**: localhost:5002's static settings (max_words=140) caused sparse displays for reasoning data (52-58 unique words)
+- **Data Heterogeneity**: Comments (146 words) vs. Reasoning explanations (52-58 words) require different visualization strategies
+- **Educational Value Lost**: Generic word weighting fails to emphasize pedagogical significance
+
+#### Solution Architecture
+```
+Input Data → Dataset Type Detection → Adaptive Parameter Calculation → Vocabulary Processing → Optimized Wordcloud
+     ↓              ↓                        ↓                          ↓                    ↓
+All Corpus → [comments_only,         → [Layout, Font,            → [Noise Removal,    → Category-Specific
+             reasoning_only,           Density, Colors]            Normalization,       Visual Output
+             mixed, unknown]                                       Weight Calculation]
+```
+
+#### Vocabulary Intelligence Features
+1. **Morphological Analysis**: Janome-based tokenization with educational context awareness
+2. **Noise Reduction**: 73.4% automatic filtering of particles, auxiliary verbs, and procedural language
+3. **Semantic Normalization**: Expression variant unification (みそ汁→みそ, とける→溶ける)
+4. **Educational Weighting**: Science terms (3x), emotion terms (2x), basic terms (1x)
+5. **Adaptive Layout**: Density-responsive parameter adjustment for optimal readability
+
+#### Technical Implementation
+- **Data Detection**: Automatic categorization of input datasets
+- **Parameter Optimization**: Mathematical models for font size, word count, and layout density
+- **Quality Metrics**: Vocabulary density, frequency distribution, and educational value scoring
+- **Output Validation**: Statistical comparison of before/after optimization effectiveness
+
+This system transforms raw text analysis from static visualization to adaptive, educationally-focused knowledge representation.
