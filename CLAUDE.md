@@ -340,6 +340,54 @@ wordcloud_app/
 
 #### Production Considerations
 - **Concurrent Operation**: Both versions can run simultaneously on different ports
-- **Data Consistency**: Both use the same processed dataset (`data/processed/all_text_corpus.csv`)
+- **Data Consistency**: Both uses the same processed dataset (`data/processed/all_text_corpus.csv`)
 - **Configuration Export**: Ver.2 includes version metadata in exported configurations
 - **Log Separation**: Independent logging for debugging and monitoring
+
+## Major Updates (2025-06-01) - Difference Wordcloud Implementation
+
+### Interactive Difference Wordcloud Analysis
+- **Purpose**: Compare vocabulary changes between before/after responses with advanced visualization
+- **Location**: Integrated into Ver.2 application as a separate tab
+- **Key Features**:
+  - Three calculation methods with distinct characteristics:
+    - **Frequency Difference**: Emphasizes new vocabulary introduction (best for educational impact)
+    - **Relative Difference**: Shows proportional changes (normalized by total frequency)
+    - **Log Ratio**: Provides statistical stability for rare words
+  - Direction-aware visualization with unified color scheme
+  - Real-time statistics display (word counts, Cohen's d effect size)
+
+#### Technical Implementation Details
+- **Japanese Font Fix**: Resolved matplotlib title rendering issue by implementing proper font property management
+- **Enhanced Weighting**: Direction-aware weighting system amplifies visual differences between calculation methods
+- **Unified Design**: All visual parameters reference fixed_params for consistency with standard wordclouds
+- **Color Coding**: 
+  - Increase words: Orange spectrum (#ff9800, #d06500, #331a00)
+  - Decrease words: Blue spectrum (#0066cc, #003d7a)
+  - Uses WCAG 2.1 AA compliant colors from ACCESSIBLE_COLORS
+
+#### Calculation Method Characteristics
+1. **Frequency Difference** (`freq_after - freq_before`):
+   - Best for identifying newly introduced vocabulary
+   - Example: "ナトリウム" appears 0→8 times = difference of 8
+   - Recommended for educational impact assessment
+
+2. **Relative Difference** (`(after - before) / (after + before)`):
+   - Normalizes by total frequency, shows proportional change
+   - Range: -1 (complete decrease) to +1 (new appearance)
+   - Good for comparing words of different frequency levels
+
+3. **Log Ratio** (`log2(after/before)`):
+   - Provides symmetric scale for increases/decreases
+   - Handles rare words better with smoothing
+   - Preferred for statistical analysis
+
+#### UI/UX Enhancements
+- **Tab Navigation**: Switch between standard and difference wordcloud modes
+- **Comprehensive Settings Panel**: 
+  - Data source selection (Comments vs Q2)
+  - Class filtering options
+  - Calculation method dropdown with explanations
+  - Visual parameter controls
+- **Statistics Display**: Shows total words analyzed, increased/decreased counts
+- **Responsive Design**: Mobile-friendly with proper touch support
