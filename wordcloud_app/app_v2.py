@@ -21,6 +21,7 @@ import matplotlib
 matplotlib.use('Agg')  # バックエンド設定（GUI不要）
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
+from matplotlib import font_manager as fm
 from PIL import Image
 import numpy as np
 import logging
@@ -33,6 +34,8 @@ import math
 import networkx as nx
 from collections import defaultdict
 from itertools import combinations
+from sklearn.feature_extraction.text import CountVectorizer
+from scipy.sparse import coo_matrix
 
 # プロジェクトルートをパスに追加
 current_dir = Path(__file__).parent
@@ -571,14 +574,14 @@ class WordTreeGenerator:
 
 
 class CooccurrenceNetworkGenerator:
-    """共起ネットワーク生成クラス"""
+    """共起ネットワーク生成クラス - シンプル版（既存ライブラリ活用）"""
     
     def __init__(self, base_generator):
         """ベースジェネレータから機能を継承"""
         self.base_generator = base_generator
         self.tokenizer = base_generator.tokenizer
         
-        # ネットワーク可視化設定
+        # ネットワーク可視化設定（アクセシブルカラー準拠）
         self.network_colors = {
             'node': {
                 'default': self.base_generator.ACCESSIBLE_COLORS['blue'],
@@ -592,195 +595,120 @@ class CooccurrenceNetworkGenerator:
             }
         }
     
-    def calculate_cooccurrence(self, text, window_size=None, excluded_words=None):
-        """共起頻度を計算"""
-        # 文単位での共起（デフォルト）
-        sentences = self._tokenize_sentences(text)
-        cooccurrence = defaultdict(int)
-        word_freq = defaultdict(int)
-        
-        for sentence in sentences:
-            # 単語に分割（除外語を適用）
-            tokenized = self.base_generator.tokenize_japanese(sentence, excluded_words)
-            words = tokenized.split()
-            
-            # 単語頻度カウント
-            for word in words:
-                word_freq[word] += 1
-            
-            if window_size is None:
-                # 文内共起
-                for word1, word2 in combinations(set(words), 2):
-                    if word1 != word2:
-                        # アルファベット順でペアを正規化
-                        pair = tuple(sorted([word1, word2]))
-                        cooccurrence[pair] += 1
-            else:
-                # ウィンドウサイズ指定
-                for i, word1 in enumerate(words):
-                    for j in range(max(0, i - window_size), min(len(words), i + window_size + 1)):
-                        if i != j:
-                            word2 = words[j]
-                            if word1 != word2:
-                                pair = tuple(sorted([word1, word2]))
-                                cooccurrence[pair] += 1
-        
-        return cooccurrence, word_freq
-    
     def _tokenize_sentences(self, text):
         """テキストを文単位に分割"""
         import re
         sentences = re.split(r'[。！？]+', text)
         return [s.strip() for s in sentences if s.strip()]
     
-    def calculate_association_strength(self, cooccurrence, word_freq, method='pmi'):
-        """共起の強さを計算（PMI、Jaccard係数など）"""
-        total_words = sum(word_freq.values())
-        associations = {}
+    def calculate_cooccurrence_matrix(self, text, excluded_words=None):
+        """scikit-learn活用で共起行列を効率的に計算"""
+        sentences = self._tokenize_sentences(text)
         
-        for (word1, word2), cooc_count in cooccurrence.items():
-            if cooc_count == 0:
-                continue
-            
-            freq1 = word_freq[word1]
-            freq2 = word_freq[word2]
-            
-            if method == 'pmi':
-                # Pointwise Mutual Information
-                p_word1 = freq1 / total_words
-                p_word2 = freq2 / total_words
-                p_cooc = cooc_count / total_words
-                
-                if p_cooc > 0:
-                    pmi = math.log(p_cooc / (p_word1 * p_word2))
-                    associations[(word1, word2)] = {
-                        'score': pmi,
-                        'count': cooc_count
-                    }
-            
-            elif method == 'jaccard':
-                # Jaccard係数
-                union = freq1 + freq2 - cooc_count
-                if union > 0:
-                    jaccard = cooc_count / union
-                    associations[(word1, word2)] = {
-                        'score': jaccard,
-                        'count': cooc_count
-                    }
-            
-            else:  # 'frequency'
-                # 単純な共起頻度
-                associations[(word1, word2)] = {
-                    'score': cooc_count,
-                    'count': cooc_count
-                }
+        # 各文を単語に分割（除外語適用）
+        processed_sentences = []
+        for sentence in sentences:
+            tokenized = self.base_generator.tokenize_japanese(sentence, excluded_words)
+            if tokenized.strip():
+                processed_sentences.append(tokenized)
         
-        return associations
+        if not processed_sentences:
+            return None, None, None
+        
+        # CountVectorizerで語彙ベクトル化
+        vectorizer = CountVectorizer(
+            lowercase=False,
+            stop_words=None,  # 既に除外済み
+            min_df=2,         # 最低2回出現
+            max_features=100  # 上位100語まで
+        )
+        
+        try:
+            X = vectorizer.fit_transform(processed_sentences)
+            # 共起行列 = X^T * X（効率的な疎行列計算）
+            cooccurrence_matrix = (X.T @ X).toarray()
+            words = vectorizer.get_feature_names_out()
+            word_freq = dict(zip(words, X.sum(axis=0).A1))
+            
+            return cooccurrence_matrix, words, word_freq
+            
+        except ValueError as e:
+            logger.warning(f"共起行列計算でエラー: {e}")
+            return None, None, None
     
-    def build_network(self, associations, word_freq, config):
-        """NetworkXグラフオブジェクトを構築"""
-        G = nx.Graph()
+    def build_network_graph(self, cooccurrence_matrix, words, word_freq, config):
+        """NetworkXで直接グラフ構築"""
+        # NetworkXで共起行列から直接グラフ作成
+        G = nx.from_numpy_array(cooccurrence_matrix)
         
-        # 閾値設定
+        # ノードラベルを単語に設定
+        mapping = {i: word for i, word in enumerate(words)}
+        G = nx.relabel_nodes(G, mapping)
+        
+        # ノード属性設定（頻度情報）
+        for word in words:
+            if word in word_freq:
+                G.nodes[word]['frequency'] = word_freq[word]
+        
+        # 閾値でエッジフィルタリング（NetworkX組み込み機能）
         min_edge_weight = config.get('min_edge_weight', 2)
-        min_node_freq = config.get('min_node_freq', 3)
-        max_nodes = config.get('max_nodes', 50)
+        edges_to_remove = [(u, v) for u, v, d in G.edges(data=True) 
+                          if d['weight'] < min_edge_weight]
+        G.remove_edges_from(edges_to_remove)
         
-        # ノードの追加（頻度でフィルタリング）
-        sorted_words = sorted(word_freq.items(), key=lambda x: x[1], reverse=True)
-        selected_words = set()
+        # 孤立ノード削除
+        isolated = list(nx.isolates(G))
+        G.remove_nodes_from(isolated)
         
-        for word, freq in sorted_words[:max_nodes]:
-            if freq >= min_node_freq:
-                selected_words.add(word)
-                G.add_node(word, frequency=freq)
-        
-        # エッジの追加（関連度でフィルタリング）
-        for (word1, word2), data in associations.items():
-            if (word1 in selected_words and word2 in selected_words and 
-                data['count'] >= min_edge_weight):
-                G.add_edge(word1, word2, weight=data['score'], count=data['count'])
-        
-        # 孤立ノードを削除
-        isolated_nodes = list(nx.isolates(G))
-        G.remove_nodes_from(isolated_nodes)
+        # ノード数制限
+        max_nodes = config.get('max_nodes', 30)
+        if G.number_of_nodes() > max_nodes:
+            # 重要度順（次数×頻度）でノード選択
+            node_importance = {
+                node: G.degree(node) * G.nodes[node].get('frequency', 1)
+                for node in G.nodes()
+            }
+            important_nodes = sorted(node_importance.items(), 
+                                   key=lambda x: x[1], reverse=True)[:max_nodes]
+            nodes_to_keep = [node for node, _ in important_nodes]
+            nodes_to_remove = [node for node in G.nodes() if node not in nodes_to_keep]
+            G.remove_nodes_from(nodes_to_remove)
         
         return G
     
-    def prepare_vis_data(self, G, word_freq):
-        """vis.js用のデータ形式に変換"""
-        # ノードデータ
-        nodes = []
-        max_freq = max(word_freq.values()) if word_freq else 1
+    def get_matplotlib_font_props(self, font_path):
+        """matplotlib用フォントプロパティを取得"""
+        # フォントパスが指定されている場合
+        if font_path and Path(font_path).exists():
+            try:
+                logger.info(f"指定フォントを使用: {font_path}")
+                return fm.FontProperties(fname=font_path)
+            except Exception as e:
+                logger.warning(f"指定フォント読み込み失敗: {e}")
         
-        for node in G.nodes():
-            freq = G.nodes[node]['frequency']
-            # サイズは頻度に基づく（10-50の範囲）
-            size = 10 + (freq / max_freq) * 40
-            
-            # 科学用語判定
-            is_science = any(node in terms for terms in [
-                ['塩', '食塩', '塩分'],
-                ['ナトリウム', '塩化ナトリウム'],
-                ['Na', 'NaCl', 'イオン', 'Na+']
-            ])
-            
-            # 重要語判定（頻度上位10%）
-            is_important = freq >= max_freq * 0.9
-            
-            # 色設定
-            if is_science:
-                color = self.network_colors['node']['science']
-            elif is_important:
-                color = self.network_colors['node']['important']
-            else:
-                color = self.network_colors['node']['default']
-            
-            nodes.append({
-                'id': node,
-                'label': node,
-                'value': size,
-                'color': color,
-                'font': {
-                    'size': max(12, size / 3),
-                    'color': '#000000'
-                }
-            })
+        # デフォルトの日本語フォント（はんなり明朝を優先）
+        fonts_dir = self.base_generator.fonts_dir
+        default_fonts = [
+            fonts_dir / "HannariMincho-Regular.otf",  # はんなり明朝を優先
+            fonts_dir / "ipaexg.ttf",
+            fonts_dir / "ipag.ttf", 
+            fonts_dir / "NotoSansJP-Regular.otf"
+        ]
         
-        # エッジデータ
-        edges = []
-        edge_weights = [G[u][v]['weight'] for u, v in G.edges()]
-        max_weight = max(edge_weights) if edge_weights else 1
-        min_weight = min(edge_weights) if edge_weights else 0
+        for default_font in default_fonts:
+            if default_font.exists():
+                try:
+                    logger.info(f"デフォルト日本語フォントを使用: {default_font}")
+                    return fm.FontProperties(fname=str(default_font))
+                except Exception as e:
+                    logger.warning(f"デフォルトフォント読み込み失敗: {e}")
+                    continue
         
-        for edge in G.edges(data=True):
-            weight = edge[2]['weight']
-            count = edge[2]['count']
-            
-            # エッジの太さ（1-5の範囲）
-            normalized_weight = (weight - min_weight) / (max_weight - min_weight) if max_weight > min_weight else 0.5
-            width = 1 + normalized_weight * 4
-            
-            # エッジの色（強度に基づく）
-            if normalized_weight > 0.7:
-                color = self.network_colors['edge']['strong']
-            elif normalized_weight > 0.3:
-                color = self.network_colors['edge']['medium']
-            else:
-                color = self.network_colors['edge']['weak']
-            
-            edges.append({
-                'from': edge[0],
-                'to': edge[1],
-                'value': width,
-                'color': color,
-                'title': f'共起回数: {count}'
-            })
-        
-        return {'nodes': nodes, 'edges': edges}
+        logger.warning("利用可能な日本語フォントが見つかりませんでした")
+        return None
     
-    def generate_cooccurrence_network_data(self, config):
-        """共起ネットワーク用データ生成"""
+    def generate_cooccurrence_image(self, config):
+        """共起ネットワーク静的画像生成（wordcloudと同じインターフェース）"""
         try:
             # データソース取得
             text_key = config.get('text_source', 'all_responses')
@@ -803,33 +731,161 @@ class CooccurrenceNetworkGenerator:
                 custom_words = [w.strip() for w in config.get('custom_exclude_words', '').split(',') if w.strip()]
                 excluded_words.update(custom_words)
             
-            # 共起計算
-            window_size = config.get('window_size', None)  # Noneの場合は文内共起
-            cooccurrence, word_freq = self.calculate_cooccurrence(text, window_size, excluded_words)
+            # Step 1: scikit-learn共起行列計算
+            cooccurrence_matrix, words, word_freq = self.calculate_cooccurrence_matrix(text, excluded_words)
             
-            # 関連度計算
-            method = config.get('association_method', 'pmi')
-            associations = self.calculate_association_strength(cooccurrence, word_freq, method)
+            if cooccurrence_matrix is None:
+                return None, "共起関係が見つかりませんでした", {}
             
-            # ネットワーク構築
-            G = self.build_network(associations, word_freq, config)
+            # Step 2: NetworkXグラフ構築
+            G = self.build_network_graph(cooccurrence_matrix, words, word_freq, config)
             
-            # vis.js用データ変換
-            vis_data = self.prepare_vis_data(G, word_freq)
+            if G.number_of_nodes() == 0:
+                return None, "表示可能なネットワークが見つかりませんでした", {}
             
-            # 統計情報
+            # Step 3: matplotlib描画設定
+            plt.figure(figsize=(config.get('width', 800)/100, config.get('height', 600)/100))
+            
+            # レイアウト計算
+            layout_type = config.get('layout', 'spring')
+            if layout_type == 'spring':
+                pos = nx.spring_layout(G, k=2, iterations=50, seed=42)
+            elif layout_type == 'circular':
+                pos = nx.circular_layout(G)
+            elif layout_type == 'kamada_kawai':
+                pos = nx.kamada_kawai_layout(G)
+            else:
+                pos = nx.spring_layout(G, k=2, iterations=50, seed=42)
+            
+            # ノード色・サイズ設定
+            node_colors = []
+            node_sizes = []
+            max_freq = max(word_freq.values()) if word_freq else 1
+            
+            for node in G.nodes():
+                freq = G.nodes[node].get('frequency', 1)
+                
+                # 科学用語判定
+                is_science = any(node in terms for terms in [
+                    ['塩', '食塩', '塩分'],
+                    ['ナトリウム', '塩化ナトリウム'],
+                    ['Na', 'NaCl', 'イオン', 'Na+']
+                ])
+                
+                # 重要語判定（頻度上位20%）
+                is_important = freq >= max_freq * 0.8
+                
+                # 色設定
+                if is_science:
+                    node_colors.append(self.network_colors['node']['science'])
+                elif is_important:
+                    node_colors.append(self.network_colors['node']['important'])
+                else:
+                    node_colors.append(self.network_colors['node']['default'])
+                
+                # サイズ設定（100-1000の範囲）
+                size = 100 + (freq / max_freq) * 900
+                node_sizes.append(size)
+            
+            # エッジ幅設定
+            edge_weights = [G[u][v]['weight'] for u, v in G.edges()]
+            if edge_weights:
+                max_weight = max(edge_weights)
+                min_weight = min(edge_weights)
+                edge_widths = [1 + 4 * (w - min_weight) / (max_weight - min_weight) 
+                              if max_weight > min_weight else 2.5 
+                              for w in edge_weights]
+            else:
+                edge_widths = [2.5] * G.number_of_edges()
+            
+            # フォント設定（はんなり明朝を優先使用）
+            font_key = config.get('font', 'hannari')  # デフォルトをはんなり明朝に
+            
+            # はんなり明朝を優先的に選択
+            if font_key in ['default', 'hannari'] or font_key not in self.base_generator.available_fonts:
+                hannari_path = self.base_generator.fonts_dir / "HannariMincho-Regular.otf"
+                if hannari_path.exists():
+                    font_path = str(hannari_path)
+                    logger.info(f"はんなり明朝を使用します: {font_path}")
+                else:
+                    font_info = self.base_generator.available_fonts.get(font_key, {})
+                    font_path = font_info.get('path')
+                    if font_path and not Path(font_path).is_absolute():
+                        font_path = str(project_root / font_path)
+            else:
+                font_info = self.base_generator.available_fonts.get(font_key, {})
+                font_path = font_info.get('path')
+                if font_path and not Path(font_path).is_absolute():
+                    font_path = str(project_root / font_path)
+            
+            font_props = self.get_matplotlib_font_props(font_path)
+            font_family = font_props.get_name() if font_props else 'sans-serif'
+            logger.info(f"使用フォントファミリー: {font_family}")
+            
+            # ネットワーク描画
+            plt.clf()
+            plt.figure(figsize=(config.get('width', 800)/100, config.get('height', 600)/100))
+            
+            # 背景色設定
+            background_color = config.get('background_color', '#f8f8f8')
+            plt.gca().set_facecolor(background_color)
+            
+            # エッジ描画
+            nx.draw_networkx_edges(G, pos, 
+                                 width=edge_widths,
+                                 edge_color='#888888',
+                                 alpha=0.6)
+            
+            # ノード描画
+            nx.draw_networkx_nodes(G, pos,
+                                 node_color=node_colors,
+                                 node_size=node_sizes,
+                                 alpha=0.8)
+            
+            # ラベル描画（日本語フォント対応）
+            # NetworkXのlabels描画は日本語フォントをサポートしないため、個別描画
+            font_size = config.get('font_size', 12)
+            for node, (x, y) in pos.items():
+                # 個別にラベルを描画（fontpropertiesを直接指定）
+                text_props = {
+                    'ha': 'center',
+                    'va': 'center', 
+                    'fontsize': font_size,
+                    'weight': 'bold',
+                    'color': 'black'
+                }
+                
+                # 日本語フォントが利用可能な場合は指定
+                if font_props:
+                    text_props['fontproperties'] = font_props
+                
+                plt.text(x, y, str(node), **text_props)
+            
+            plt.axis('off')
+            plt.tight_layout()
+            
+            # 統計情報（JSONシリアライゼーション対応）
             statistics = {
-                'total_nodes': G.number_of_nodes(),
-                'total_edges': G.number_of_edges(),
-                'density': nx.density(G) if G.number_of_nodes() > 0 else 0,
-                'components': nx.number_connected_components(G),
-                'average_degree': sum(dict(G.degree()).values()) / G.number_of_nodes() if G.number_of_nodes() > 0 else 0
+                'total_nodes': int(G.number_of_nodes()),
+                'total_edges': int(G.number_of_edges()),
+                'density': float(nx.density(G)) if G.number_of_nodes() > 0 else 0.0,
+                'components': int(nx.number_connected_components(G)),
+                'max_frequency': int(max_freq),
+                'layout_used': str(layout_type)
             }
             
-            return vis_data, None, statistics
+            # Base64エンコード（wordcloudと同じ）
+            img_buffer = io.BytesIO()
+            plt.savefig(img_buffer, format='png', bbox_inches='tight', dpi=150,
+                       facecolor=background_color, edgecolor='none')
+            img_buffer.seek(0)
+            img_base64 = base64.b64encode(img_buffer.getvalue()).decode()
+            plt.close()
+            
+            return img_base64, None, statistics
             
         except Exception as e:
-            logger.error(f"共起ネットワーク生成エラー: {e}")
+            logger.error(f"共起ネットワーク画像生成エラー: {e}")
             return None, f"生成エラー: {str(e)}", {}
 
 class WordCloudGeneratorV2:
@@ -1329,13 +1385,42 @@ def get_recommended_roots():
         'recommended_roots': word_tree_generator.recommended_roots
     })
 
+@app.route('/api/network-layouts')
+def get_network_layouts():
+    """共起ネットワーク用レイアウト一覧"""
+    return jsonify({
+        'layouts': {
+            'spring': {
+                'name': 'バネモデル',
+                'description': '自然なクラスタ配置（推奨）'
+            },
+            'circular': {
+                'name': '円形配置',
+                'description': 'ノードを円形に配置'
+            },
+            'kamada_kawai': {
+                'name': '力学モデル',
+                'description': '物理シミュレーションベース'
+            }
+        },
+        'default_config': {
+            'layout': 'spring',
+            'min_edge_weight': 2,
+            'max_nodes': 30,
+            'font_size': 10,
+            'width': 800,
+            'height': 600,
+            'background_color': '#f8f8f8'
+        }
+    })
+
 @app.route('/api/cooccurrence-generate', methods=['POST'])
 def generate_cooccurrence_network():
-    """共起ネットワーク生成API"""
+    """共起ネットワーク画像生成API（wordcloudと同じインターフェース）"""
     try:
         config = request.json
         
-        network_data, error, statistics = cooccurrence_generator.generate_cooccurrence_network_data(config)
+        img_base64, error, statistics = cooccurrence_generator.generate_cooccurrence_image(config)
         
         if error:
             return jsonify({
@@ -1346,8 +1431,9 @@ def generate_cooccurrence_network():
         
         return jsonify({
             'success': True,
-            'network': network_data,
+            'image': img_base64,  # wordcloudと同じフォーマット
             'statistics': statistics,
+            'config': config,
             'type': 'cooccurrence_network'
         })
         
@@ -1374,6 +1460,7 @@ if __name__ == '__main__':
     print("🔧 固定パラメータ:")
     for key, value in generator.FIXED_PARAMS.items():
         print(f"   - {key}: {value}")
+    print("🔍 新機能: 共起ネットワーク静的画像生成（scikit-learn + NetworkX活用）")
     print("=" * 60)
     
     # Flaskアプリ実行（ポート5002）
